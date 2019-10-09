@@ -1,0 +1,44 @@
+package global
+
+import (
+	"ants/pkg"
+	"math"
+)
+
+type Area [][]*Object
+
+func (a Area) ToColorSlice() [][]string {
+	colorSlice := make([][]string, len(a))
+	for x := 0; x < len(a); x++ {
+		colorSlice[x] = make([]string, len(a[x]))
+		for y := 0; y < len(a); y++ {
+			colorSlice[x][y] = a[x][y].Color
+		}
+	}
+
+	return colorSlice
+}
+
+func (a Area) TypesSlice(ant *Ant) [9]pkg.FieldType {
+	fieldTypes := [9]pkg.FieldType{}
+	i := 0
+	for y := ant.Pos.Y() - 1; y <= ant.Pos.Y()+1; y++ {
+		for x := ant.Pos.X() - 1; x <= ant.Pos.X()+1; x++ {
+			fieldTypes[i] = a[x][y].FieldTypeForUser(ant)
+			i++
+		}
+	}
+
+	return fieldTypes
+}
+
+func (a Area) RelativePosition(pos Pos, field uint8) Pos {
+	return Pos{
+		pos.X() + uint(math.Mod(float64(field+3), 3)) - 1,
+		pos.Y() + uint(math.Floor(float64(field/3))) - 1,
+	}
+}
+
+func (a Area) ByPos(pos Pos) *Object {
+	return a[pos.X()][pos.Y()]
+}
