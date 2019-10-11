@@ -55,6 +55,7 @@ func (g *Game) do(ant *global.Ant, targetPos global.Pos, action pkg.Action) {
 		}
 
 		g.queueAtTheCemetery = append(g.queueAtTheCemetery, target.Ant)
+		g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
 		break
 
 	case pkg.EatAction:
@@ -84,6 +85,7 @@ func (g *Game) do(ant *global.Ant, targetPos global.Pos, action pkg.Action) {
 
 	case pkg.DieAction:
 		g.queueAtTheCemetery = append(g.queueAtTheCemetery, ant)
+		g.area[ant.Pos.X()][ant.Pos.Y()] = global.CreateEmptyObject()
 		break
 	}
 }
