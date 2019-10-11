@@ -1,0 +1,11 @@
+version: '3.7'
+services:
+  go:
+    image: golang
+    volumes:
+      - .:/src/ants
+    working_dir: /src/ants
+    ports:
+      - 2345
+#    entrypoint: 'sh init.sh'
+    tty: true

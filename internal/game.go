@@ -3,7 +3,6 @@ package internal
 import (
 	"ants/internal/global"
 	"ants/pkg"
-	"log"
 )
 
 type Game struct {
@@ -32,9 +31,6 @@ func (g *Game) Run(pipe chan [][]string) {
 
 			fieldTypes := g.area.TypesSlice(ant)
 			field, action := g.ants[i].User.Algorithm().Do(fieldTypes)
-			log.Println(ant.User.Name)
-			log.Println(len(g.ants))
-			log.Println(field, action)
 			pos := g.area.RelativePosition(ant.Pos, field)
 			g.do(ant, pos, action)
 		}
@@ -50,11 +46,10 @@ func (g *Game) Run(pipe chan [][]string) {
 	close(pipe)
 }
 
-func (g *Game) do(ant *global.Ant, targetPos global.Pos, action uint8) {
+func (g *Game) do(ant *global.Ant, targetPos global.Pos, action pkg.Action) {
 	target := g.area.ByPos(targetPos)
 	switch action {
 	case pkg.AttackAction:
-		log.Println("attack")
 		if target.Type != pkg.AntField {
 			break
 		}
@@ -73,6 +68,7 @@ func (g *Game) do(ant *global.Ant, targetPos global.Pos, action uint8) {
 			IsDead: false,
 		}
 		g.area[targetPos.X()][targetPos.Y()] = global.CreateAnt(baby)
+		g.ants = append(g.ants, baby)
 
 		break
 
@@ -87,7 +83,6 @@ func (g *Game) do(ant *global.Ant, targetPos global.Pos, action uint8) {
 		break
 
 	case pkg.DieAction:
-		log.Println("die")
 		g.queueAtTheCemetery = append(g.queueAtTheCemetery, ant)
 		break
 	}

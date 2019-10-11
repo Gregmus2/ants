@@ -11,7 +11,7 @@ type Object struct {
 func CreateEmptyObject() *Object {
 	return &Object{
 		Type:  pkg.EmptyField,
-		Color: "#FFFFFF",
+		Color: "#000000",
 		Ant:   nil,
 	}
 }
@@ -29,6 +29,14 @@ func CreateAnt(ant *Ant) *Object {
 		Type:  pkg.AntField,
 		Color: ant.User.Color,
 		Ant:   ant,
+	}
+}
+
+func CreateFood() *Object {
+	return &Object{
+		Type:  pkg.FoodField,
+		Color: "yellow",
+		Ant:   nil,
 	}
 }
 

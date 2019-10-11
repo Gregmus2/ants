@@ -3,7 +3,7 @@ package global
 import "ants/pkg"
 
 type Algorithm interface {
-	Do(fields [9]pkg.FieldType) (field uint8, action uint8)
+	Do(fields [9]pkg.FieldType) (field uint8, action pkg.Action)
 }
 
 type Storage interface {

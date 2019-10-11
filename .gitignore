@@ -4,3 +4,4 @@
 algorithms/*.so
 ants
 ants.db
+.env

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -76,7 +77,7 @@ func Serve() {
 	http.HandleFunc("/size", func(w http.ResponseWriter, r *http.Request) {
 		(w).Header().Set("Access-Control-Allow-Origin", "*")
 
-		_, err := fmt.Fprintf(w, "10")
+		_, err := fmt.Fprintf(w, os.Getenv("AREA_SIZE"))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -109,7 +110,7 @@ func Serve() {
 		_, _ = fmt.Fprintf(w, string(jsonResponse))
 	})
 
-	err := http.ListenAndServe(":82", nil)
+	err := http.ListenAndServe(":12301", nil)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -9,7 +9,10 @@ const EnemyField FieldType = 3
 const WallField FieldType = 4
 const AntField FieldType = 5
 
-const AttackAction uint8 = 0
-const EatAction uint8 = 1
-const MoveAction uint8 = 2
-const DieAction uint8 = 3
+type Action uint8
+
+const NoAction Action = 0
+const AttackAction Action = 1
+const EatAction Action = 2
+const MoveAction Action = 3
+const DieAction Action = 4
