@@ -11,6 +11,7 @@ func init() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+	log.Println("Dotenv loaded successfully")
 }
 
 func main() {

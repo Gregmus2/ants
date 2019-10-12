@@ -39,6 +39,7 @@ func prepareGame(names []string) (int, error) {
 	builder.BuildFood(0.05, 0.07, len(names), true)
 
 	pipe := make(chan [][]string, 100)
+	// @todo we need to recreate pipes for some time, because of length grow
 	pipes = append(pipes, pipe)
 	go builder.BuildMatch().Run(pipe)
 

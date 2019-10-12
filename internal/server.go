@@ -16,10 +16,8 @@ func Serve() {
 	http.HandleFunc("/size", size)
 	http.HandleFunc("/get", get)
 
-	err := http.ListenAndServe(":12301", nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+	log.Println("Start server on port 12301")
+	log.Fatal(http.ListenAndServe(":12301", nil))
 }
 
 func start(w http.ResponseWriter, r *http.Request) {
@@ -97,20 +95,28 @@ func size(w http.ResponseWriter, r *http.Request) {
 func get(w http.ResponseWriter, r *http.Request) {
 	(w).Header().Set("Access-Control-Allow-Origin", "*")
 
-	id, err := strconv.ParseInt(r.URL.Query()["id"][0], 10, 32)
-	if err != nil {
+	if _, ok := r.URL.Query()["id"]; !ok {
 		w.WriteHeader(400)
 		_, _ = fmt.Fprint(w, "id query param must be exist")
 		return
 	}
 
-	pipe := pipes[id]
-	if pipe == nil {
-		w.WriteHeader(400)
-		_, _ = fmt.Fprint(w, "Wrong channel")
+	id, err := strconv.ParseInt(r.URL.Query()["id"][0], 10, 32)
+	if err != nil {
+		w.WriteHeader(500)
+		_, _ = fmt.Fprint(w, "id parse error")
 		return
 	}
 
+	if len(pipes) <= int(id) {
+		w.WriteHeader(404)
+		_, _ = fmt.Fprintf(w, string("Not found"))
+		return
+	}
+	pipe := pipes[id]
+
+	// @todo we need buffer to return current state of game thought it.
+	// Because now every user pop values from pipe and other users can't see this values
 	jsonResponse, err := json.Marshal(<-pipe)
 	if err != nil {
 		w.WriteHeader(500)

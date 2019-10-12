@@ -58,6 +58,7 @@ func (g *Match) do(ant *global.Ant, targetPos global.Pos, action pkg.Action) {
 		g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
 		break
 
+	// @todo we need to handle case, when two ants want to eat one food
 	case pkg.EatAction:
 		if target.Type != pkg.FoodField {
 			break

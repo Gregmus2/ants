@@ -1,1 +1,1 @@
-go test && go build . && chmod 777 ants
+go test && go run .

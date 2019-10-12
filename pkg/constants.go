@@ -1,5 +1,6 @@
 package pkg
 
+// @todo we need to share this package as a separate lib
 type FieldType uint8
 
 const EmptyField FieldType = 0

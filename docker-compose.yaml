@@ -4,5 +4,7 @@ services:
     image: golang
     volumes:
       - .:/src/ants
+    ports:
+      - 12301:12301
     working_dir: /src/ants
     entrypoint: 'sh init.sh'
