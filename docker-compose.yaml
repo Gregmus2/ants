@@ -5,7 +5,4 @@ services:
     volumes:
       - .:/src/ants
     working_dir: /src/ants
-    ports:
-      - 2345
-#    entrypoint: 'sh init.sh'
-    tty: true
+    entrypoint: 'sh init.sh'

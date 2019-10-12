@@ -1,19 +1,19 @@
-package internal
+package game
 
 import (
 	"ants/internal/global"
 	"ants/pkg"
 )
 
-type Game struct {
+type Match struct {
 	users              []*global.User
 	ants               []*global.Ant
 	area               global.Area
 	queueAtTheCemetery []*global.Ant
 }
 
-func CreateGame(users []*global.User, ants []*global.Ant, area global.Area) *Game {
-	return &Game{
+func CreateMatch(users []*global.User, ants []*global.Ant, area global.Area) *Match {
+	return &Match{
 		users:              users,
 		ants:               ants,
 		area:               area,
@@ -21,7 +21,7 @@ func CreateGame(users []*global.User, ants []*global.Ant, area global.Area) *Gam
 	}
 }
 
-func (g *Game) Run(pipe chan [][]string) {
+func (g *Match) Run(pipe chan [][]string) {
 	for len(g.users) > 1 {
 		for i := 0; i < len(g.ants); i++ {
 			ant := g.ants[i]
@@ -46,7 +46,7 @@ func (g *Game) Run(pipe chan [][]string) {
 	close(pipe)
 }
 
-func (g *Game) do(ant *global.Ant, targetPos global.Pos, action pkg.Action) {
+func (g *Match) do(ant *global.Ant, targetPos global.Pos, action pkg.Action) {
 	target := g.area.ByPos(targetPos)
 	switch action {
 	case pkg.AttackAction:

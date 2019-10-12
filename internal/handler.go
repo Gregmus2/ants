@@ -1,12 +1,10 @@
 package internal
 
 import (
+	"ants/internal/game"
 	"ants/internal/global"
-	"ants/pkg"
-	"errors"
 	"io"
 	"io/ioutil"
-	"math"
 	"os"
 	"strconv"
 )
@@ -19,12 +17,7 @@ func init() {
 	pipes = make([]chan [][]string, 0)
 }
 
-// @todo separate by methods
-func start(names []string) (int, error) {
-	if len(names) != 2 {
-		return 0, errors.New("names must be 2")
-	}
-
+func prepareGame(names []string) (int, error) {
 	users := make([]*global.User, len(names))
 	for i := 0; i < len(names); i++ {
 		users[i] = global.LoadUser(storage, names[i])
@@ -32,66 +25,27 @@ func start(names []string) (int, error) {
 
 	size64, err := strconv.ParseInt(os.Getenv("AREA_SIZE"), 10, 64)
 	size := int(size64)
-	usize := uint(size)
 	if err != nil {
 		return 0, err
 	}
 
-	quartSize := uint(math.Round(float64(size / 4)))
-	halfSize := uint(math.Round(float64(size / 2)))
-
-	// @todo more ants, more automation
-	ants := make([]*global.Ant, len(users))
-	ants[0] = &global.Ant{
-		Pos:    [2]uint{quartSize, halfSize},
-		User:   users[0],
-		IsDead: false,
-	}
-	ants[1] = &global.Ant{
-		Pos:    [2]uint{usize - quartSize, halfSize},
-		User:   users[1],
-		IsDead: false,
+	builder, err := game.NewMatchBuilder(size, users)
+	if err != nil {
+		return 0, err
 	}
 
-	area := make([][]*global.Object, size)
-	for x := 0; x < size; x++ {
-		area[x] = make([]*global.Object, size)
-		for y := 0; y < size; y++ {
-			if x == 0 || x == size-1 || y == 0 || y == size-1 {
-				area[x][y] = global.CreateWall()
-			} else {
-				area[x][y] = global.CreateEmptyObject()
-			}
-		}
-	}
+	builder.BuildAnts()
+	builder.BuildArea()
+	builder.BuildFood(0.05, 0.07, len(names), true)
 
-	area[ants[0].Pos.X()][ants[0].Pos.Y()] = global.CreateAnt(ants[0])
-	area[ants[1].Pos.X()][ants[1].Pos.Y()] = global.CreateAnt(ants[1])
-
-	foodCount := int(float64(size) * 0.5)
-	if foodCount < len(ants) {
-		foodCount = len(ants)
-	}
-	for i := 0; i < foodCount; i += 2 {
-		x := global.Random.Intn(int(halfSize))
-		y := global.Random.Intn(size)
-		if area[x][y].Type == pkg.AntField {
-			x = global.Random.Intn(int(halfSize))
-			y = global.Random.Intn(size)
-		}
-		area[x][y] = global.CreateFood()
-		area[x+int(halfSize)][y] = global.CreateFood()
-	}
-
-	game := CreateGame(users, ants, area)
 	pipe := make(chan [][]string, 100)
 	pipes = append(pipes, pipe)
-	go game.Run(pipe)
+	go builder.BuildMatch().Run(pipe)
 
 	return len(pipes) - 1, nil
 }
 
-func register(name string, color string, algorithmFile io.Reader) error {
+func registration(name string, color string, algorithmFile io.Reader) error {
 	err := saveAlgorithmFile(algorithmFile, name)
 	if err != nil {
 		return err
