@@ -11,6 +11,7 @@ import (
 )
 
 func Serve() {
+	http.HandleFunc("/", home)
 	http.HandleFunc("/start", start)
 	http.HandleFunc("/register", register)
 	http.HandleFunc("/size", size)
@@ -18,6 +19,10 @@ func Serve() {
 
 	log.Println("Start server on port 12301")
 	log.Fatal(http.ListenAndServe(":12301", nil))
+}
+
+func home(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "static/register.html")
 }
 
 func start(w http.ResponseWriter, r *http.Request) {
@@ -81,6 +86,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprint(w, err)
 		return
 	}
+
 }
 
 func size(w http.ResponseWriter, r *http.Request) {
@@ -108,6 +114,7 @@ func get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// @todo give pipes different names like alpha and other
 	if len(pipes) <= int(id) {
 		w.WriteHeader(404)
 		_, _ = fmt.Fprintf(w, string("Not found"))

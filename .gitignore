@@ -5,3 +5,5 @@ algorithms/*.so
 ants
 ants.db
 .env
+static/*.js
+!static/require.js

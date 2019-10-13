@@ -2,7 +2,7 @@ package game
 
 import (
 	"ants/internal/global"
-	"ants/pkg"
+	pkg "github.com/gregmus2/ants-pkg"
 )
 
 type Match struct {

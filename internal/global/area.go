@@ -1,7 +1,7 @@
 package global
 
 import (
-	"ants/pkg"
+	pkg "github.com/gregmus2/ants-pkg"
 	"math"
 )
 

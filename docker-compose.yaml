@@ -8,3 +8,11 @@ services:
       - 12301:12301
     working_dir: /src/ants
     entrypoint: 'sh init.sh'
+
+  node:
+    image: node:10.13.0-alpine
+    volumes:
+      - ./front:/app
+      - ./static:/static
+    working_dir: /app
+    command: "sh docker/entrypoint.sh"

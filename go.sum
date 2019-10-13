@@ -1,5 +1,7 @@
 github.com/boltdb/bolt v1.3.1 h1:JQmyP4ZBrce+ZQu0dY660FMfatumYDLun9hBCUVIkF4=
 github.com/boltdb/bolt v1.3.1/go.mod h1:clJnj/oiGkjum5o1McbSZDSLxVThjynRyGBgiAx27Ps=
+github.com/gregmus2/ants-pkg v0.0.0-20191013074240-fa7fb52ed23a h1:HY+E0kfva//7fqAZKaqiHJZzg80blcwkLd/SiRfpAzE=
+github.com/gregmus2/ants-pkg v0.0.0-20191013074240-fa7fb52ed23a/go.mod h1:um659z99o051XwzMetSJgb6zY0V99+Y1X1kLMlj821I=
 github.com/joho/godotenv v1.3.0 h1:Zjp+RcGpHhGlrMbJzXTrZZPrWj+1vfm90La1wgB6Bhc=
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
 golang.org/x/sys v0.0.0-20191008105621-543471e840be h1:QAcqgptGM8IQBC9K/RC4o+O9YmqEm0diQn9QmZw/0mU=

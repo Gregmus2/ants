@@ -1,6 +1,6 @@
 package global
 
-import "ants/pkg"
+import pkg "github.com/gregmus2/ants-pkg"
 
 type Algorithm interface {
 	Do(fields [9]pkg.FieldType) (field uint8, action pkg.Action)

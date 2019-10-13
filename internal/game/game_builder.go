@@ -2,8 +2,8 @@ package game
 
 import (
 	"ants/internal/global"
-	"ants/pkg"
 	"errors"
+	pkg "github.com/gregmus2/ants-pkg"
 	"log"
 	"math"
 )
