@@ -4,9 +4,12 @@ export class App{
     static canvas: HTMLCanvasElement;
     static ctx: CanvasRenderingContext2D;
     static elements: Array<Array<Tile>> = [];
-    
+    static pipe: number;
+    static select: HTMLSelectElement;
+
     static init(){
         App.createSelect();
+        App.updateSelect();
         App.canvas = document.createElement("canvas");
         let size = window.innerWidth < window.innerHeight ? window.innerWidth : window.innerHeight;
         App.canvas.width = size;
@@ -19,7 +22,8 @@ export class App{
     
     static loop(){
         App.update();
-    
+        App.updateSelect();
+
         for (let row of App.elements) {
             for (let el of row) {
                 if (el.changed) {
@@ -31,13 +35,18 @@ export class App{
     }
     
     static update(){
-        fetch('/get?id=0')
+        if (App.pipe == undefined) {
+            setTimeout(() => (App.loop()), 10000);
+            return;
+        }
+
+        fetch('/get?id=' + App.pipe)
             .then(response => {
                 switch (response.status) {
                     case 200:
-                        return response.json()
+                        return response.json();
                     case 404:
-                        throw '404'
+                        return Promise.reject('404')
                 }
             })
             .then(body => {
@@ -49,21 +58,34 @@ export class App{
     
                 setTimeout(() => (App.loop()), 50);
             })
-            .catch(() => setTimeout(() => (App.loop()), 10000));
+            .catch(() => {setTimeout(() => (App.loop()), 10000); console.log(123)});
     }
 
     static createSelect(){
+        App.select = document.createElement("select");
+        document.body.appendChild(App.select);
+        App.select.addEventListener('onchange', function() {
+            App.pipe = this.selectedOptions.item(0).value;
+        })
+    }
+
+    static updateSelect(){
+        if (App.select == undefined) {
+            return;
+        }
+
         fetch('/pipes')
             .then(response => response.json())
             .then(body => {
-                let select = document.createElement("select");
-                for (let id in body) {
-                    let opt = document.createElement("option")
+                for (let index in App.select.options) {
+                    App.select.remove(Number(index))
+                }
+                for (let id of body) {
+                    let opt = document.createElement("option");
                     opt.value = id;
                     opt.text = id;
-                    select.add(opt, null)
+                    App.select.add(opt, null)
                 }
-                document.body.appendChild(select);
             })
     }
 }
