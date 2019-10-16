@@ -55,7 +55,7 @@ func CreateMatch(users []*global.User, ants []*global.Ant, area global.Area, s g
 func (g *Match) Run(name string) {
 	round := 1
 	part := 1
-	states := make([][][]string, 0, 50)
+	states := make([][][]string, 0, 100)
 	for g.stat.CountLiving() > 1 && part < 100 {
 		for i := 0; i < len(g.ants); i++ {
 			ant := g.ants[i]
@@ -75,9 +75,9 @@ func (g *Match) Run(name string) {
 		g.queueAtTheCemetery = make([]*global.Ant, 0)
 
 		states = append(states, g.area.ToColorSlice())
-		if math.Mod(float64(round), 50) == 0 {
+		if math.Mod(float64(round), 100) == 0 {
 			g.saveRound(name, part, states)
-			states = make([][][]string, 0, 50)
+			states = make([][][]string, 0, 100)
 			part++
 		}
 		round++

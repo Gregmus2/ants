@@ -7,7 +7,7 @@ export class App{
     static id: string = null;
     static part: number = 1;
     static select: HTMLSelectElement;
-    static buffer: Array<Array<Array<string>>> = null;
+    static buffer: Array<Array<Array<string>>> = [];
 
     static init(){
         App.createSelect();
@@ -23,35 +23,35 @@ export class App{
     }
     
     static loop(){
-        if (App.id == null) {
-            setTimeout(() => (App.loop()), 10000);
+        if (App.id == null && App.buffer.length == 0) {
             return;
         }
 
-        App.update().then(r => {
-            for (let row of App.elements) {
-                for (let el of row) {
-                    if (el.changed) {
-                        App.ctx.clearRect(el.x, el.y, el.w, el.h);
-                        App.ctx.drawImage(el.draw(), el.x, el.y);
-                    }
+        App.update();
+
+        for (let row of App.elements) {
+            for (let el of row) {
+                if (el.changed) {
+                    App.ctx.clearRect(el.x, el.y, el.w, el.h);
+                    App.ctx.drawImage(el.draw(), el.x, el.y);
                 }
             }
+        }
 
-            setTimeout(() => (App.loop()), 50);
-        });
+        requestAnimationFrame(App.loop);
     }
     
-    static async update() {
-        if (App.buffer == null || App.buffer.length < 50) {
-            return App.fetchMap().then(() => App.renderFromBuffer());
+    static update() {
+        if (App.buffer.length < 200 && App.id != null) {
+            App.fetchMap();
         }
 
         App.renderFromBuffer();
     }
 
-    static fetchMap(): Promise<void> {
-        let result = fetch('/get?id=' + App.id + '&part=' + App.part)
+    // todo что делать с порядком вставки в буфер
+    static fetchMap() {
+        let prom = fetch('/get?id=' + App.id + '&part=' + App.part)
             .then(response => {
                 switch (response.status) {
                     case 200:
@@ -61,13 +61,11 @@ export class App{
                 }
             })
             .then(body => {
-                App.buffer = App.buffer == null ? body : App.buffer.concat(body);
-                App.part++;
-            });
+                App.buffer = App.buffer.concat(body);
+            }).catch(() => {App.id = null});
+        App.part++;
 
-        result.catch(() => {App.id = null});
-
-        return result
+        return prom;
     }
 
     static createSelect(){
@@ -75,7 +73,8 @@ export class App{
         document.body.appendChild(App.select);
         App.select.addEventListener("change", function() {
             App.id = this.selectedOptions.item(0).value;
-            App.part = 1
+            App.part = 1;
+            App.fetchMap().then(() => App.loop());
         })
     }
 
@@ -110,7 +109,6 @@ export class App{
     static renderFromBuffer(){
         let map = App.buffer.shift();
         if (!map) {
-            App.buffer = undefined;
             return;
         }
 
@@ -125,8 +123,4 @@ export class App{
             }
         }
     }
-}
-
-function delay(ms: number) {
-    return new Promise( resolve => setTimeout(resolve, ms) );
 }
