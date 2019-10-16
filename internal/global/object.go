@@ -11,7 +11,7 @@ type Object struct {
 func CreateEmptyObject() *Object {
 	return &Object{
 		Type:  pkg.EmptyField,
-		Color: "#000000",
+		Color: "",
 		Ant:   nil,
 	}
 }

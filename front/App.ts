@@ -6,6 +6,7 @@ export class App{
     static elements: Array<Array<Tile>> = [];
     static pipe: number;
     static select: HTMLSelectElement;
+    static buffer: Array<Array<Array<string>>> = null;
 
     static init(){
         App.createSelect();
@@ -21,26 +22,35 @@ export class App{
     }
     
     static loop(){
-        App.update();
-        App.updateSelect();
-
-        for (let row of App.elements) {
-            for (let el of row) {
-                if (el.changed) {
-                    App.ctx.clearRect(el.x, el.y, el.w, el.h);
-                    App.ctx.drawImage(el.draw(), el.x, el.y);
-                }
-            }
-        }
-    }
-    
-    static update(){
-        if (App.pipe == undefined) {
+        if (App.id == null) {
             setTimeout(() => (App.loop()), 10000);
             return;
         }
 
-        fetch('/get?id=' + App.pipe)
+        App.update().then(r => {
+            for (let row of App.elements) {
+                for (let el of row) {
+                    if (el.changed) {
+                        App.ctx.clearRect(el.x, el.y, el.w, el.h);
+                        App.ctx.drawImage(el.draw(), el.x, el.y);
+                    }
+                }
+            }
+
+            setTimeout(() => (App.loop()), 50);
+        });
+    }
+    
+    static async update() {
+        if (App.buffer == null || App.buffer.length < 50) {
+            return App.fetchMap().then(() => App.renderFromBuffer());
+        }
+
+        App.renderFromBuffer();
+    }
+
+    static fetchMap(): Promise<void> {
+        let result = fetch('/get?id=' + App.id + '&part=' + App.part)
             .then(response => {
                 switch (response.status) {
                     case 200:
@@ -50,15 +60,13 @@ export class App{
                 }
             })
             .then(body => {
-                for (let x in body) {
-                    for (let y in body) {
-                        App.elements[x][y].setColor(body[x][y])
-                    }
-                }
-    
-                setTimeout(() => (App.loop()), 50);
-            })
-            .catch(() => {setTimeout(() => (App.loop()), 10000); console.log(123)});
+                App.buffer = App.buffer == null ? body : App.buffer.concat(body);
+                App.part++;
+            });
+
+        result.catch(() => {App.id = null});
+
+        return result
     }
 
     static createSelect(){
@@ -80,12 +88,43 @@ export class App{
                 for (let index in App.select.options) {
                     App.select.remove(Number(index))
                 }
+
+                let opt = document.createElement("option");
+                opt.value = undefined;
+                opt.text = '';
+                App.select.add(opt, null);
+
                 for (let id of body) {
                     let opt = document.createElement("option");
                     opt.value = id;
                     opt.text = id;
                     App.select.add(opt, null)
                 }
+
+                setTimeout(() => (App.updateSelect()), 5000);
             })
     }
+
+    static renderFromBuffer(){
+        let map = App.buffer.shift();
+        if (!map) {
+            App.buffer = undefined;
+            return;
+        }
+
+        App.renderMap(map)
+    }
+
+
+    static renderMap(map: Array<Array<string>>){
+        for (let x in map) {
+            for (let y in map) {
+                App.elements[x][y].setColor(map[x][y] == "" ? 'black' : map[x][y])
+            }
+        }
+    }
+}
+
+function delay(ms: number) {
+    return new Promise( resolve => setTimeout(resolve, ms) );
 }

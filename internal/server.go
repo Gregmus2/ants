@@ -49,20 +49,20 @@ func startHandle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	names := strings.Split(namesString, ",")
-	pipeNum, err := prepareGame(names)
+	id, err := prepareGame(names)
 	if err != nil {
 		w.WriteHeader(400)
 		_, _ = fmt.Fprint(w, err)
 		return
 	}
 
-	_, _ = fmt.Fprint(w, pipeNum)
+	_, _ = fmt.Fprint(w, id)
 }
 
 func pipesHandle(w http.ResponseWriter, r *http.Request) {
-	response := make([]string, len(pipes))
-	for i, _ := range pipes {
-		response = append(response, string(i))
+	response := make([]string, 0, len(matches))
+	for name, _ := range matches {
+		response = append(response, name)
 	}
 
 	responseJson, err := json.Marshal(response)
@@ -127,18 +127,14 @@ func getHandle(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprint(w, "id query param must be exist")
 		return
 	}
-
-	id, err := strconv.ParseInt(r.URL.Query()["id"][0], 10, 32)
-	if err != nil {
-		w.WriteHeader(500)
-		_, _ = fmt.Fprint(w, "id parse error")
-		return
-	}
+	id := r.URL.Query()["id"][0]
+	part := r.URL.Query()["part"][0]
 
 	// @todo give pipes different names like alpha and other
-	if len(pipes) <= int(id) {
+	match, ok := matches[id]
+	if !ok {
 		w.WriteHeader(404)
-		_, _ = fmt.Fprintf(w, string("Not found"))
+		_, _ = fmt.Fprintf(w, "Not found")
 		return
 	}
 	pipe := pipes[id]

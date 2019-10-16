@@ -10,40 +10,39 @@ import (
 )
 
 var storage global.Storage
-var pipes []chan [][]string
+var matches map[string]*game.Match
 
 func init() {
 	storage = global.NewBolt("ants")
-	pipes = make([]chan [][]string, 0)
+	matches = make(map[string]*game.Match)
 }
 
-func prepareGame(names []string) (int, error) {
-	users := make([]*global.User, len(names))
+func prepareGame(names []string) (string, error) {
+	users := make([]*global.User, 0, len(names))
 	for i := 0; i < len(names); i++ {
-		users[i] = global.LoadUser(storage, names[i])
+		users = append(users, global.LoadUser(storage, names[i]))
 	}
 
 	size64, err := strconv.ParseInt(os.Getenv("AREA_SIZE"), 10, 64)
 	size := int(size64)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
 	builder, err := game.NewMatchBuilder(size, users)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
 	builder.BuildAnts()
 	builder.BuildArea()
 	builder.BuildFood(0.05, 0.07, len(names), true)
 
-	pipe := make(chan [][]string, 100)
-	// @todo we need to recreate pipes for some time, because of length grow
-	pipes = append(pipes, pipe)
-	go builder.BuildMatch().Run(pipe)
+	id := strconv.Itoa(global.Random.Intn(1000))
+	matches[id] = builder.BuildMatch(storage)
+	go matches[id].Run(id)
 
-	return len(pipes) - 1, nil
+	return id, nil
 }
 
 func registration(name string, color string, algorithmFile io.Reader) error {

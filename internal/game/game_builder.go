@@ -44,13 +44,13 @@ func (gb *MatchBuilder) BuildAnts() {
 		log.Fatal("wrong number of players")
 	}
 
-	gb.ants = make([]*global.Ant, len(gb.players))
-	for i := 0; i < len(gb.ants); i++ {
-		gb.ants[i] = &global.Ant{
+	gb.ants = make([]*global.Ant, 0, len(gb.players))
+	for i := 0; i < len(gb.players); i++ {
+		gb.ants = append(gb.ants, &global.Ant{
 			Pos:    positions[i],
 			User:   gb.players[i],
 			IsDead: false,
-		}
+		})
 	}
 }
 
@@ -103,12 +103,12 @@ func (gb *MatchBuilder) BuildFood(percentFrom float32, percentTo float32, min in
 	}
 }
 
-func (gb *MatchBuilder) BuildMatch() *Match {
+func (gb *MatchBuilder) BuildMatch(s global.Storage) *Match {
 	if gb.players == nil || gb.ants == nil {
 		log.Fatal("builder must have at least players and ants")
 	}
 
-	return CreateMatch(gb.players, gb.ants, gb.area)
+	return CreateMatch(gb.players, gb.ants, gb.area, s)
 }
 
 func (gb *MatchBuilder) foodUniformDistribution(foodCount int) {
