@@ -4,7 +4,8 @@ export class App{
     static canvas: HTMLCanvasElement;
     static ctx: CanvasRenderingContext2D;
     static elements: Array<Array<Tile>> = [];
-    static pipe: number;
+    static id: string = null;
+    static part: number = 1;
     static select: HTMLSelectElement;
     static buffer: Array<Array<Array<string>>> = null;
 
@@ -72,8 +73,9 @@ export class App{
     static createSelect(){
         App.select = document.createElement("select");
         document.body.appendChild(App.select);
-        App.select.addEventListener('onchange', function() {
-            App.pipe = this.selectedOptions.item(0).value;
+        App.select.addEventListener("change", function() {
+            App.id = this.selectedOptions.item(0).value;
+            App.part = 1
         })
     }
 

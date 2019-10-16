@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 )
 
@@ -41,7 +40,7 @@ func startHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	namesString := r.FormValue("names")
+	namesString := r.PostFormValue("names")
 	if namesString == "" {
 		w.WriteHeader(400)
 		_, _ = fmt.Fprint(w, "names have blank values")
@@ -122,9 +121,11 @@ func sizeHandle(w http.ResponseWriter, r *http.Request) {
 }
 
 func getHandle(w http.ResponseWriter, r *http.Request) {
-	if _, ok := r.URL.Query()["id"]; !ok {
+	_, okId := r.URL.Query()["id"]
+	_, okPart := r.URL.Query()["part"]
+	if !okId || !okPart {
 		w.WriteHeader(400)
-		_, _ = fmt.Fprint(w, "id query param must be exist")
+		_, _ = fmt.Fprint(w, "id, part query param must be exist")
 		return
 	}
 	id := r.URL.Query()["id"][0]
@@ -137,11 +138,8 @@ func getHandle(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprintf(w, "Not found")
 		return
 	}
-	pipe := pipes[id]
 
-	// @todo we need buffer to return current state of game thought it.
-	// Because now every user pop values from pipe and other users can't see this values
-	jsonResponse, err := json.Marshal(<-pipe)
+	jsonResponse, err := json.Marshal(match.LoadRound(id, part))
 	if err != nil {
 		w.WriteHeader(500)
 		_, _ = fmt.Fprint(w, err)

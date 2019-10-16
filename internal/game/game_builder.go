@@ -16,7 +16,7 @@ type MatchBuilder struct {
 }
 
 func NewMatchBuilder(areaSize int, players []*global.User) (*MatchBuilder, error) {
-	if len(players) != 2 || len(players) != 4 {
+	if len(players) != 2 && len(players) != 4 {
 		return nil, errors.New("wrong number of players")
 	}
 
@@ -55,7 +55,7 @@ func (gb *MatchBuilder) BuildAnts() {
 }
 
 func (gb *MatchBuilder) BuildArea() {
-	if gb.area == nil || gb.ants == nil {
+	if gb.ants == nil {
 		log.Fatal("builder must have ants before build area")
 	}
 
@@ -134,11 +134,11 @@ func (gb *MatchBuilder) foodUniformDistribution(foodCount int) {
 	}
 
 	for i := 0; i < foodCount; i += antsCount {
-		if foodCount-i < 4 {
+		if foodCount-i < antsCount {
 			break
 		}
 
-		for j := 0; j < antsCount; i++ {
+		for j := 0; j < antsCount; j++ {
 			x := global.Random.Intn(xPartSize) + offsets[j][0]
 			y := global.Random.Intn(yPartSize) + offsets[j][1]
 			if gb.area[x][y].Type != pkg.AntField {

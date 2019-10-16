@@ -62,8 +62,13 @@ func saveAlgorithmFile(file io.Reader, name string) error {
 		return err
 	}
 
-	// Create a file within our algorithm directory that follows a particular naming pattern
-	err = ioutil.WriteFile("algorithms/"+name+".so", fileBytes, 0644)
+	aFile, err := os.OpenFile("algorithms/"+name+".so", os.O_WRONLY|os.O_CREATE, 0644)
+	if err != nil {
+		return err
+	}
+	defer aFile.Close()
+
+	_, err = aFile.WriteAt(fileBytes, 0)
 	if err != nil {
 		return err
 	}

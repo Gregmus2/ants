@@ -2,6 +2,7 @@ package global
 
 import (
 	"encoding/json"
+	pkg "github.com/gregmus2/ants-pkg"
 	"log"
 	"plugin"
 	"strings"
@@ -10,11 +11,11 @@ import (
 type User struct {
 	Name      string
 	Color     string
-	algorithm Algorithm
+	algorithm pkg.Algorithm
 	storage   Storage
 }
 
-func (u *User) Algorithm() Algorithm {
+func (u *User) Algorithm() pkg.Algorithm {
 	return u.algorithm
 }
 
@@ -67,7 +68,7 @@ func (u *User) Save() {
 	}
 }
 
-func loadAlgorithm(name string) Algorithm {
+func loadAlgorithm(name string) pkg.Algorithm {
 	path := "./algorithms/" + name + ".so"
 	plug, err := plugin.Open(path)
 	if err != nil {
@@ -81,8 +82,8 @@ func loadAlgorithm(name string) Algorithm {
 		return nil
 	}
 
-	var algorithm Algorithm
-	algorithm, ok := symbol.(Algorithm)
+	var algorithm pkg.Algorithm
+	algorithm, ok := symbol.(pkg.Algorithm)
 	if !ok {
 		log.Println("Wrong symbol")
 		return nil
