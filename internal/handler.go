@@ -23,13 +23,7 @@ func prepareGame(names []string) (string, error) {
 		users = append(users, global.LoadUser(storage, names[i]))
 	}
 
-	size64, err := strconv.ParseInt(os.Getenv("AREA_SIZE"), 10, 64)
-	size := int(size64)
-	if err != nil {
-		return "", err
-	}
-
-	builder, err := game.NewMatchBuilder(size, users)
+	builder, err := game.NewMatchBuilder(global.Config.AreaSize, users)
 	if err != nil {
 		return "", err
 	}

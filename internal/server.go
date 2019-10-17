@@ -1,15 +1,17 @@
 package internal
 
 import (
+	"ants/internal/global"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
+	"strconv"
 	"strings"
 )
 
 func Serve() {
+	// todo add /api namespace
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/", fs)
 	http.HandleFunc("/home", homeHandle)
@@ -114,7 +116,7 @@ func registerHandle(w http.ResponseWriter, r *http.Request) {
 }
 
 func sizeHandle(w http.ResponseWriter, r *http.Request) {
-	_, err := fmt.Fprintf(w, os.Getenv("AREA_SIZE"))
+	_, err := fmt.Fprintf(w, strconv.Itoa(global.Config.AreaSize))
 	if err != nil {
 		log.Fatal(err)
 	}

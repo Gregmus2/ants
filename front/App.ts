@@ -8,6 +8,7 @@ export class App{
     static part: number = 1;
     static select: HTMLSelectElement;
     static buffer: Array<Array<Array<string>>> = [];
+    static updating: boolean = false;
 
     static init(){
         App.createSelect();
@@ -32,8 +33,7 @@ export class App{
         for (let row of App.elements) {
             for (let el of row) {
                 if (el.changed) {
-                    App.ctx.clearRect(el.x, el.y, el.w, el.h);
-                    App.ctx.drawImage(el.draw(), el.x, el.y);
+                    el.draw()
                 }
             }
         }
@@ -42,7 +42,7 @@ export class App{
     }
     
     static update() {
-        if (App.buffer.length < 200 && App.id != null) {
+        if (App.buffer.length < 200 && App.id != null && !App.updating) {
             App.fetchMap();
         }
 
@@ -51,6 +51,7 @@ export class App{
 
     // todo что делать с порядком вставки в буфер
     static fetchMap() {
+        App.updating = true;
         let prom = fetch('/get?id=' + App.id + '&part=' + App.part)
             .then(response => {
                 switch (response.status) {
@@ -61,6 +62,12 @@ export class App{
                 }
             })
             .then(body => {
+                App.updating = false;
+                if (body.length == 0) {
+                    App.id = null;
+                    return;
+                }
+
                 App.buffer = App.buffer.concat(body);
             }).catch(() => {App.id = null});
         App.part++;

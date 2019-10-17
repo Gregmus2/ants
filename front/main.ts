@@ -16,7 +16,8 @@ fetch('http://127.0.0.1:12301/size')
                     Math.round(y * tileSize),
                     tileSize,
                     tileSize,
-                    "#FFFFFF"
+                    "#FFFFFF",
+                    App.ctx
                 );
             }
         }

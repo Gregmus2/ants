@@ -4,20 +4,16 @@ export class Tile {
     readonly w: number;
     readonly h: number;
     private color: string;
-    private readonly canvas: HTMLCanvasElement;
-    private context: CanvasRenderingContext2D;
+    private ctx: CanvasRenderingContext2D;
     changed: boolean = true;
     
-    constructor(x: number, y: number, w:number, h:number, color: string) {
+    constructor(x: number, y: number, w:number, h:number, color: string, ctx: CanvasRenderingContext2D) {
         this.x = x;
         this.y = y;
         this.w = w;
         this.h = h;
         this.color = color;
-        this.canvas = document.createElement('canvas');
-        this.canvas.width = w;
-        this.canvas.height = h;
-        this.context = this.canvas.getContext('2d');
+        this.ctx = ctx;
     }
     
     setColor(color: string){
@@ -26,17 +22,9 @@ export class Tile {
             this.changed = true;
         }
     }
-    
-    clearCanvas(){
-        this.context.clearRect(0, 0, this.w, this.h);
-    }
-    
+
     draw(){
-        this.clearCanvas();
-        this.context.fillStyle = this.color;
-        this.context.fillRect(0, 0, this.w, this.h);
-        this.changed = false;
-        
-        return this.canvas;
+        this.ctx.fillStyle = this.color;
+        this.ctx.fillRect(this.x, this.y, this.w, this.h);
     }
 }

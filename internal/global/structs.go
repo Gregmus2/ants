@@ -16,3 +16,9 @@ type Ant struct {
 	User   *User
 	IsDead bool
 }
+
+type ConfigType struct {
+	AreaSize        int
+	MatchPartsLimit int
+	MatchPartSize   int
+}
