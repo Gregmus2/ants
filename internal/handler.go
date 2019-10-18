@@ -56,7 +56,8 @@ func saveAlgorithmFile(file io.Reader, name string) error {
 		return err
 	}
 
-	aFile, err := os.OpenFile("algorithms/"+name+".so", os.O_WRONLY|os.O_CREATE, 0644)
+	algorithmsPath := os.ExpandEnv("$GOPATH/src/github.com/gregmus2/ants/algorithms")
+	aFile, err := os.OpenFile(algorithmsPath+"/"+name+".so", os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}
