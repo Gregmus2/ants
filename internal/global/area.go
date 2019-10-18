@@ -20,6 +20,11 @@ func (a Area) ToColorSlice() [][]string {
 }
 
 func (a Area) TypesSlice(ant *Ant) [9]pkg.FieldType {
+	/*  It's fields near ant in that order:
+			0 1 2
+			3 4 5
+	 		6 7 8
+	*/
 	fieldTypes := [9]pkg.FieldType{}
 	i := 0
 	for y := ant.Pos.Y() - 1; y <= ant.Pos.Y()+1; y++ {
@@ -32,6 +37,12 @@ func (a Area) TypesSlice(ant *Ant) [9]pkg.FieldType {
 	return fieldTypes
 }
 
+/* add field with format
+0 1 2
+3 4 5
+6 7 8
+	to input position
+*/
 func (a Area) RelativePosition(pos Pos, field uint8) Pos {
 	return Pos{
 		pos.X() + uint(math.Mod(float64(field+3), 3)) - 1,

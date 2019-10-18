@@ -64,6 +64,7 @@ func (gb *MatchBuilder) BuildArea() {
 	for x := 0; x < gb.areaSize; x++ {
 		gb.area[x] = make([]*global.Object, gb.areaSize)
 		for y := 0; y < gb.areaSize; y++ {
+			// edges
 			if x == 0 || x == lastTile || y == 0 || y == lastTile {
 				gb.area[x][y] = global.CreateWall()
 			} else {
