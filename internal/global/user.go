@@ -55,6 +55,10 @@ func LoadUser(storage Storage, name string) *User {
 	return user
 }
 
+func GetNames(storage Storage) ([]string, error) {
+	return storage.GetKeys(UserCollection)
+}
+
 func (u *User) Save() {
 	data, err := json.Marshal(u)
 	if err != nil {

@@ -9,15 +9,20 @@ export class App{
     static select: HTMLSelectElement;
     static buffer: Array<Array<Array<string>>> = [];
     static updating: boolean = false;
+    static playersContainer: HTMLElement;
 
     static init(){
         App.createSelect();
         App.updateSelect();
-        App.canvas = document.createElement("canvas");
+        App.initForm();
+        App.createPlayers();
+        App.updatePlayers();
+        App.canvas = document.querySelector("canvas");
         let size = window.innerWidth < window.innerHeight ? window.innerWidth : window.innerHeight;
         App.canvas.width = size;
         App.canvas.height = size;
-        App.canvas.style.border = '1px solid #000';
+        App.canvas.style.borderRight = '1px solid #000';
+        App.canvas.style.borderLeft= '1px solid #000';
         App.canvas.addEventListener('contextmenu', event => event.preventDefault());
         document.body.appendChild(App.canvas);
         App.ctx = App.canvas.getContext('2d');
@@ -76,8 +81,7 @@ export class App{
     }
 
     static createSelect(){
-        App.select = document.createElement("select");
-        document.body.appendChild(App.select);
+        App.select = document.querySelector("select");
         App.select.addEventListener("change", function() {
             App.id = this.selectedOptions.item(0).value;
             App.part = 1;
@@ -90,7 +94,7 @@ export class App{
             return;
         }
 
-        fetch('/pipes')
+        fetch('/api/pipes')
             .then(response => response.json())
             .then(body => {
                 for (let index in App.select.options) {
@@ -113,6 +117,69 @@ export class App{
             })
     }
 
+    static createPlayers(){
+        App.playersContainer = document.getElementById('players');
+        document.getElementById('refresh').addEventListener("click", () => {
+            this.updatePlayers();
+        });
+        document.getElementById('start').addEventListener("click", () => {
+            this.startGame();
+        });
+    }
+
+    static startGame() {
+        const request = new XMLHttpRequest();
+        request.open('POST', '/api/start', true);
+        request.onload = function () {
+            if (this.status >= 200 && this.status < 400) {
+                App.updateSelect()
+            } else {
+                alert(this.response)
+            }
+        };
+        request.onerror = function (err) {
+            alert(err)
+        };
+
+        let names = [];
+        App.playersContainer.querySelectorAll(':checked').forEach(function (value) {
+            names.push(value.nextSibling.textContent)
+        });
+
+        request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        request.send('names=' + names.join(','));
+        App.updatePlayers()
+    }
+
+    static updatePlayers() {
+        if (App.playersContainer == undefined) {
+            return;
+        }
+
+        fetch('/api/players')
+            .then(response => response.json())
+            .then(body => {
+                App.playersContainer.innerHTML = '';
+
+                for (let name of body) {
+                    let div = document.createElement("div");
+                    div.className = 'uk-margin uk-grid-small uk-child-width-auto uk-grid';
+                    let label = document.createElement("label");
+                    let span = document.createElement("span");
+                    span.innerText = name;
+                    span.className = 'uk-margin-small-left';
+                    let input = document.createElement("input");
+                    input.className = 'uk-checkbox';
+                    input.type = 'checkbox';
+
+                    div.appendChild(label);
+                    label.appendChild(input);
+                    label.appendChild(span);
+                    App.playersContainer.appendChild(div)
+                }
+            })
+    }
+
     static renderFromBuffer(){
         let map = App.buffer.shift();
         if (!map) {
@@ -129,5 +196,26 @@ export class App{
                 App.elements[x][y].setColor(map[x][y] == "" ? 'black' : map[x][y])
             }
         }
+    }
+
+    static initForm(){
+        let form = document.querySelector('form');
+        form.addEventListener('submit', (event) => {event.preventDefault(); this.submitForm(form)});
+    }
+
+    static submitForm(form: HTMLFormElement){
+        const request = new XMLHttpRequest();
+        request.open('POST', '/api/register', true);
+        request.onload = function () {
+            if (this.status >= 200 && this.status < 400) {
+                App.updatePlayers()
+            } else {
+                alert(this.response)
+            }
+        };
+        request.onerror = function (err) {
+            alert(err)
+        };
+        request.send(new FormData(form));
     }
 }

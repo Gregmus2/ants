@@ -1,1 +1,1 @@
-go test && go run .
+go test ./... && go run .

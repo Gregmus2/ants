@@ -13,7 +13,7 @@ var Random *rand.Rand
 var Config *ConfigType
 
 func init() {
-	err := godotenv.Load(os.ExpandEnv("$GOPATH/src/github.com/gregmus2/ants/.env"))
+	err := godotenv.Load(os.ExpandEnv("$GOPATH/src/ants/.env"))
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}

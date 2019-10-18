@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>canvas</title>
+    <style>
+        body {
+            margin: 0;
+        }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/uikit.min.css"/>
+    <script src="js/uikit.min.js"></script>
+    <script src="js/uikit-icons.min.js"></script>
+</head>
+<body>
+
+<canvas class="uk-position-center uk-position-absolute"></canvas>
+<a href="" class="uk-position-absolute uk-position-top-right uk-padding-small uk-position-z-index"  uk-icon="user"
+   uk-toggle="target: #register"></a>
+<a href="" class="uk-position-absolute uk-position-top-right uk-padding-small uk-position-z-index uk-margin-medium-top"  uk-icon="play"
+   uk-toggle="target: #game"></a>
+
+<div id="register" uk-offcanvas="flip: true">
+    <div class="uk-offcanvas-bar">
+        <button class="uk-offcanvas-close" type="button" uk-close></button>
+        <div class="uk-overlay" uk-grid>
+            <form action="/api/register" enctype="multipart/form-data" method="post">
+                <div class="uk-width-3-4@s uk-display-inline-block">
+                    <input class="uk-input" name="name" placeholder="Name" type="text" required>
+                </div>
+                <div class="uk-width-1-5@s uk-display-inline-block">
+                    <input class="uk-input" name="color" placeholder="Color" type="color" required>
+                </div>
+                <div class="uk-margin-small" uk-margin>
+                    <div uk-form-custom="target: true">
+                        <input type="file" name="algorithm" accept=".so" required>
+                        <input class="uk-input uk-form-width-medium" type="text" placeholder="Alhorithm" disabled>
+                    </div>
+                    <button class="uk-button uk-button-secondary uk-width-1-1@l">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div id="game" uk-offcanvas="flip: true">
+    <div class="uk-offcanvas-bar">
+        <button class="uk-offcanvas-close" type="button" uk-close></button>
+        <select class="uk-select"></select>
+        <fieldset id="players"></fieldset>
+        <button id="start" class="uk-button uk-button-secondary uk-width-4-5@s">RUN</button>
+        <a id="refresh" href="#" class="uk-icon-button" uk-icon="refresh"></a>
+    </div>
+</div>
+<script src="require.js" data-main="main.js"></script>
+</body>
+</html>

@@ -3,10 +3,12 @@ services:
   go:
     image: golang:1.12.7
     volumes:
-      - .:/src/ants
+      - .:/go/src/ants
     ports:
       - 12301:12301
-    working_dir: /src/ants
+    working_dir: /go/src/ants
+    environment:
+      - GO111MODULE=on
     entrypoint: 'sh init.sh'
 
   node:

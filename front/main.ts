@@ -3,7 +3,7 @@ import {Tile} from "./Tile";
 
 App.init();
 
-fetch('http://127.0.0.1:12301/size')
+fetch('http://127.0.0.1:12301/api/size')
     .then(response => response.text())
     .then(body => {
         let size = parseInt(body);

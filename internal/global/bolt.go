@@ -35,6 +35,22 @@ func (b *Bolt) Get(collection string, key string) ([]byte, error) {
 	return data, err
 }
 
+func (b *Bolt) GetKeys(collection string) ([]string, error) {
+	var data []string
+	err := b.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(collection))
+		err := bucket.ForEach(func(k []byte, v []byte) error {
+			data = append(data, string(k))
+
+			return nil
+		})
+
+		return err
+	})
+
+	return data, err
+}
+
 func (b *Bolt) Put(collection string, key string, value []byte) error {
 	err := b.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(collection))
