@@ -11,27 +11,14 @@ import (
 )
 
 func Serve() {
-	// todo add /api namespace
-	fs := http.FileServer(http.Dir("static"))
-	http.Handle("/", fs)
-	http.HandleFunc("/home", homeHandle)
-	http.HandleFunc("/start", startHandle)
-	http.HandleFunc("/pipes", pipesHandle)
-	http.HandleFunc("/register", registerHandle)
-	http.HandleFunc("/size", sizeHandle)
-	http.HandleFunc("/get", getHandle)
-	http.HandleFunc("/game", gameHandle)
+	http.HandleFunc("/api/start", startHandle)
+	http.HandleFunc("/api/pipes", pipesHandle)
+	http.HandleFunc("/api/register", registerHandle)
+	http.HandleFunc("/api/size", sizeHandle)
+	http.HandleFunc("/api/get", getHandle)
 
 	log.Println("Start server on port 12301")
 	log.Fatal(http.ListenAndServe(":12301", nil))
-}
-
-func gameHandle(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "static/get.html")
-}
-
-func homeHandle(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "static/register.html")
 }
 
 func startHandle(w http.ResponseWriter, r *http.Request) {
