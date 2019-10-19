@@ -21,4 +21,5 @@ type ConfigType struct {
 	AreaSize        int
 	MatchPartsLimit int
 	MatchPartSize   int
+	BasePath        string
 }

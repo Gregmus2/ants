@@ -2,6 +2,7 @@ package global
 
 import (
 	"encoding/json"
+	"errors"
 	pkg "github.com/gregmus2/ants-pkg"
 	"log"
 	"plugin"
@@ -34,25 +35,28 @@ func CreateUser(name string, color string, storage Storage) {
 	user.Save()
 }
 
-func LoadUser(storage Storage, name string) *User {
+func LoadUser(storage Storage, name string) (*User, error) {
 	data, err := storage.Get(UserCollection, name)
 	if err != nil {
-		log.Print(err)
-		return nil
+		return nil, err
 	}
 
 	if data == nil {
-		return nil
+		return nil, errors.New("user not found")
 	}
 
-	user := &User{storage: storage, algorithm: loadAlgorithm(name)}
+	alg, err := LoadAlgorithm(name)
+	if err != nil {
+		return nil, err
+	}
+
+	user := &User{storage: storage, algorithm: alg}
 	err = json.Unmarshal(data, user)
 	if err != nil {
-		log.Print(err)
-		return nil
+		return nil, err
 	}
 
-	return user
+	return user, nil
 }
 
 func GetNames(storage Storage) ([]string, error) {
@@ -72,26 +76,23 @@ func (u *User) Save() {
 	}
 }
 
-func loadAlgorithm(name string) pkg.Algorithm {
-	path := "./algorithms/" + name + ".so"
+func LoadAlgorithm(name string) (pkg.Algorithm, error) {
+	path := Config.BasePath + "/algorithms/" + name + ".so"
 	plug, err := plugin.Open(path)
 	if err != nil {
-		log.Println(err)
-		return nil
+		return nil, err
 	}
 
 	symbol, err := plug.Lookup(strings.Title(name))
 	if err != nil {
-		log.Println(err)
-		return nil
+		return nil, err
 	}
 
 	var algorithm pkg.Algorithm
 	algorithm, ok := symbol.(pkg.Algorithm)
 	if !ok {
-		log.Println("Wrong symbol")
-		return nil
+		return nil, errors.New("wrong symbol")
 	}
 
-	return algorithm
+	return algorithm, nil
 }

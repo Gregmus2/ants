@@ -57,6 +57,8 @@ func (g *Match) Run(name string) {
 	round := 1
 	part := 1
 	states := make([][][]string, 0, global.Config.MatchPartSize)
+	// todo give position of ants by start
+	// todo add anthills. All ants born in anthills
 	for g.stat.CountLiving() > 1 && part < global.Config.MatchPartsLimit {
 		for i := 0; i < len(g.ants); i++ {
 			ant := g.ants[i]
@@ -65,6 +67,7 @@ func (g *Match) Run(name string) {
 			}
 
 			fieldTypes := g.area.TypesSlice(ant)
+			// todo give round to 'Do' function
 			field, action := g.ants[i].User.Algorithm().Do(fieldTypes)
 			pos := g.area.RelativePosition(ant.Pos, field)
 			g.do(ant, pos, action)
@@ -122,6 +125,7 @@ func (g *Match) LoadRound(name string, part string) [][][]string {
 func (g *Match) do(ant *global.Ant, targetPos global.Pos, action pkg.Action) {
 	target := g.area.ByPos(targetPos)
 	switch action {
+	// todo check if the target has already dead
 	case pkg.AttackAction:
 		if target.Type != pkg.AntField {
 			break

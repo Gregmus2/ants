@@ -43,6 +43,7 @@ func (a Area) TypesSlice(ant *Ant) [9]pkg.FieldType {
 6 7 8
 	to input position
 */
+// todo move it to ants-pkg
 func (a Area) RelativePosition(pos Pos, field uint8) Pos {
 	return Pos{
 		pos.X() + uint(math.Mod(float64(field+3), 3)) - 1,

@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   go:
-    image: golang:1.12.7
+    image: golang:1.13.1
     volumes:
       - .:/go/src/ants
     ports:

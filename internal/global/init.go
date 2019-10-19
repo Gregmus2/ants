@@ -36,6 +36,7 @@ func init() {
 		AreaSize:        int(areaSize),
 		MatchPartsLimit: int(matchPartsLimit),
 		MatchPartSize:   int(matchPartSize),
+		BasePath:        os.ExpandEnv("$GOPATH/src/ants"),
 	}
 
 	Random = rand.New(rand.NewSource(time.Now().UnixNano()))

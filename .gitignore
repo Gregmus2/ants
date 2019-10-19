@@ -2,6 +2,7 @@
 /*.so
 2
 algorithms/*.so
+algorithms/*.go
 !algorithms/test.so
 ants
 ants.db
