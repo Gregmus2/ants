@@ -17,23 +17,27 @@ type MatchStat struct {
 }
 
 type Match struct {
-	users              []*global.User
-	ants               []*global.Ant
-	area               global.Area
-	queueAtTheCemetery []*global.Ant
-	stat               *MatchStat
-	s                  global.Storage
+	users                       []*global.User
+	ants                        []*global.Ant
+	anthills                    map[*global.User][]global.Anthill
+	area                        global.Area
+	queueAtTheCemetery          []*global.Ant
+	queueAtTheMaternityHospital []*global.User
+	stat                        *MatchStat
+	s                           global.Storage
 }
 
 const matchesCollection string = "matches"
 
-func CreateMatch(users []*global.User, ants []*global.Ant, area global.Area, s global.Storage) *Match {
+func CreateMatch(users []*global.User, ants []*global.Ant, anthills map[*global.User][]global.Anthill, area global.Area, s global.Storage) *Match {
 	match := &Match{
-		users:              users,
-		ants:               ants,
-		area:               area,
-		queueAtTheCemetery: make([]*global.Ant, 0),
-		s:                  s,
+		users:                       users,
+		ants:                        ants,
+		area:                        area,
+		anthills:                    anthills,
+		queueAtTheCemetery:          make([]*global.Ant, 10),
+		queueAtTheMaternityHospital: make([]*global.User, 10),
+		s:                           s,
 		stat: &MatchStat{
 			ants:   make(map[*global.User]uint),
 			dead:   make(map[*global.User]uint),
@@ -76,7 +80,16 @@ func (g *Match) Run(name string) {
 		for i := 0; i < len(g.queueAtTheCemetery); i++ {
 			g.queueAtTheCemetery[i].IsDead = true
 		}
-		g.queueAtTheCemetery = make([]*global.Ant, 0)
+		g.queueAtTheCemetery = make([]*global.Ant, 10)
+
+		latecomers := make([]*global.User, 10)
+		for _, user := range g.queueAtTheMaternityHospital {
+			ok := g.giveBirth(user)
+			if !ok {
+				latecomers = append(latecomers, user)
+			}
+		}
+		g.queueAtTheMaternityHospital = latecomers
 
 		states = append(states, g.area.ToColorSlice())
 		if math.Mod(float64(round), matchPartSizeFloat) == 0 {
@@ -142,14 +155,7 @@ func (g *Match) do(ant *global.Ant, targetPos global.Pos, action pkg.Action) {
 			break
 		}
 
-		baby := &global.Ant{
-			Pos:    targetPos,
-			User:   ant.User,
-			IsDead: false,
-		}
-		g.area[targetPos.X()][targetPos.Y()] = global.CreateAnt(baby)
-		g.ants = append(g.ants, baby)
-		g.stat.ants[ant.User]++
+		g.queueAtTheMaternityHospital = append(g.queueAtTheMaternityHospital, ant.User)
 
 		break
 
@@ -170,6 +176,25 @@ func (g *Match) do(ant *global.Ant, targetPos global.Pos, action pkg.Action) {
 		g.stat.dead[ant.User]++
 		break
 	}
+}
+
+func (g *Match) giveBirth(user *global.User) bool {
+	for _, anthill := range g.anthills[user] {
+		if g.area[anthill.BirthPos.X()][anthill.BirthPos.Y()].Type != pkg.EmptyField {
+			continue
+		}
+
+		baby := &global.Ant{
+			Pos:    anthill.BirthPos,
+			User:   user,
+			IsDead: false,
+		}
+		g.area[anthill.BirthPos.X()][anthill.BirthPos.Y()] = global.CreateAnt(baby)
+		g.ants = append(g.ants, baby)
+		g.stat.ants[user]++
+	}
+
+	return false
 }
 
 func (s *MatchStat) Kill(who *global.User, whom *global.User) {

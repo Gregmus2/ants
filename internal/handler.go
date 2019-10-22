@@ -35,8 +35,8 @@ func prepareGame(names []string) (string, error) {
 		return "", err
 	}
 
-	builder.BuildAnts()
 	builder.BuildArea()
+	builder.BuildAnts()
 	builder.BuildFood(0.05, 0.07, len(names), true)
 
 	id := strconv.Itoa(global.Random.Intn(1000))

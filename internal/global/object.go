@@ -2,6 +2,7 @@ package global
 
 import pkg "github.com/gregmus2/ants-pkg"
 
+// todo object fields must be unexported because of security
 type Object struct {
 	Type  pkg.FieldType
 	Color string
@@ -36,6 +37,15 @@ func CreateFood() *Object {
 	return &Object{
 		Type:  pkg.FoodField,
 		Color: "yellow",
+		Ant:   nil,
+	}
+}
+
+// todo color of anthill must be
+func CreateAnthill(u *User) *Object {
+	return &Object{
+		Type:  pkg.AnthillField,
+		Color: u.Color,
 		Ant:   nil,
 	}
 }

@@ -13,6 +13,7 @@ type MatchBuilder struct {
 	ants     []*global.Ant
 	players  []*global.User
 	area     global.Area
+	anthills map[*global.User][]global.Anthill
 }
 
 func NewMatchBuilder(areaSize int, players []*global.User) (*MatchBuilder, error) {
@@ -24,41 +25,57 @@ func NewMatchBuilder(areaSize int, players []*global.User) (*MatchBuilder, error
 }
 
 func (gb *MatchBuilder) BuildAnts() {
-	var positions [][2]uint
+	if gb.area == nil {
+		log.Fatal("builder must have area before build ants")
+	}
+
+	// [players][position, birth position]
+	var positions [][2][2]uint
 	quartSize := uint(math.Round(float64(gb.areaSize / 4)))
 	halfSize := uint(math.Round(float64(gb.areaSize / 2)))
 
 	switch len(gb.players) {
 	case 2:
-		positions = [][2]uint{{quartSize, halfSize}, {uint(gb.areaSize) - quartSize, halfSize}}
+		positions = [][2][2]uint{
+			{{quartSize, halfSize}, {quartSize + 1, halfSize}},
+			{{uint(gb.areaSize) - quartSize, halfSize}, {uint(gb.areaSize) - quartSize - 1, halfSize}},
+		}
 		break
 	case 4:
 		octoSize := uint(math.Round(float64(gb.areaSize / 8)))
 		lastOctoPiece := uint(gb.areaSize) - octoSize
-		positions = [][2]uint{
-			{octoSize, octoSize}, {lastOctoPiece, octoSize},
-			{octoSize, lastOctoPiece}, {lastOctoPiece, lastOctoPiece},
+		positions = [][2][2]uint{
+			{{octoSize, octoSize}, {octoSize + 1, octoSize + 1}},
+			{{lastOctoPiece, octoSize}, {lastOctoPiece - 1, octoSize + 1}},
+			{{octoSize, lastOctoPiece}, {octoSize + 1, lastOctoPiece - 1}},
+			{{lastOctoPiece, lastOctoPiece}, {lastOctoPiece - 1, lastOctoPiece - 1}},
 		}
 		break
 	default:
 		log.Fatal("wrong number of players")
 	}
 
-	gb.ants = make([]*global.Ant, 0, len(gb.players))
+	gb.anthills = make(map[*global.User][]global.Anthill)
 	for i := 0; i < len(gb.players); i++ {
+		gb.area[positions[i][0][0]][positions[i][0][1]] = global.CreateAnthill(gb.players[i])
+		gb.anthills[gb.players[i]] = append(gb.anthills[gb.players[i]], global.Anthill{
+			Pos:      positions[i][0],
+			User:     gb.players[i],
+			BirthPos: positions[i][1],
+		})
+	}
+
+	gb.ants = make([]*global.Ant, 0, len(gb.players))
+	for _, anthill := range gb.anthills {
 		gb.ants = append(gb.ants, &global.Ant{
-			Pos:    positions[i],
-			User:   gb.players[i],
+			Pos:    anthill[0].BirthPos,
+			User:   anthill[0].User,
 			IsDead: false,
 		})
 	}
 }
 
 func (gb *MatchBuilder) BuildArea() {
-	if gb.ants == nil {
-		log.Fatal("builder must have ants before build area")
-	}
-
 	gb.area = make([][]*global.Object, gb.areaSize)
 	lastTile := gb.areaSize - 1
 	for x := 0; x < gb.areaSize; x++ {
@@ -71,10 +88,6 @@ func (gb *MatchBuilder) BuildArea() {
 				gb.area[x][y] = global.CreateEmptyObject()
 			}
 		}
-	}
-
-	for _, ant := range gb.ants {
-		gb.area[ant.Pos.X()][ant.Pos.Y()] = global.CreateAnt(ant)
 	}
 }
 
