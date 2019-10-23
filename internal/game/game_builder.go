@@ -67,11 +67,13 @@ func (gb *MatchBuilder) BuildAnts() {
 
 	gb.ants = make([]*global.Ant, 0, len(gb.players))
 	for _, anthill := range gb.anthills {
-		gb.ants = append(gb.ants, &global.Ant{
+		ant := &global.Ant{
 			Pos:    anthill[0].BirthPos,
 			User:   anthill[0].User,
 			IsDead: false,
-		})
+		}
+		gb.ants = append(gb.ants, ant)
+		gb.area[anthill[0].BirthPos.X()][anthill[0].BirthPos.Y()] = global.CreateAnt(ant)
 	}
 }
 
@@ -122,7 +124,7 @@ func (gb *MatchBuilder) BuildMatch(s global.Storage) *Match {
 		log.Fatal("builder must have at least players and ants")
 	}
 
-	return CreateMatch(gb.players, gb.ants, gb.area, s)
+	return CreateMatch(gb.players, gb.ants, gb.anthills, gb.area, s)
 }
 
 func (gb *MatchBuilder) foodUniformDistribution(foodCount int) {

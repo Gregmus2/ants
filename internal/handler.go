@@ -3,9 +3,9 @@ package internal
 import (
 	"ants/internal/game"
 	"ants/internal/global"
+	"errors"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -37,7 +37,7 @@ func prepareGame(names []string) (string, error) {
 
 	builder.BuildArea()
 	builder.BuildAnts()
-	builder.BuildFood(0.05, 0.07, len(names), true)
+	builder.BuildFood(0.01, 0.03, len(names), true)
 
 	id := strconv.Itoa(global.Random.Intn(1000))
 	matches[id] = builder.BuildMatch(storage)
@@ -88,7 +88,9 @@ func saveCodeFile(file io.Reader, name string) error {
 	cmd := exec.Command("/usr/local/go/bin/go", "build", "-buildmode=plugin", "-o", outputPath, codePath)
 
 	s, err := cmd.Output()
-	log.Print(string(s))
+	if err != nil {
+		return errors.New(err.Error() + string(s))
+	}
 
-	return err
+	return os.Remove(codePath)
 }

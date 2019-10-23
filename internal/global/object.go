@@ -20,7 +20,7 @@ func CreateEmptyObject() *Object {
 func CreateWall() *Object {
 	return &Object{
 		Type:  pkg.WallField,
-		Color: "#8A4B1C",
+		Color: "brown",
 		Ant:   nil,
 	}
 }

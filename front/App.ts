@@ -26,6 +26,7 @@ export class App{
         App.canvas.addEventListener('contextmenu', event => event.preventDefault());
         document.body.appendChild(App.canvas);
         App.ctx = App.canvas.getContext('2d');
+        App.ctx.imageSmoothingEnabled = false;
     }
     
     static loop(){
@@ -44,6 +45,7 @@ export class App{
         }
 
         requestAnimationFrame(App.loop);
+        // setTimeout(() => App.loop(), 500)
     }
     
     static update() {
@@ -54,10 +56,9 @@ export class App{
         App.renderFromBuffer();
     }
 
-    // todo что делать с порядком вставки в буфер
     static fetchMap() {
         App.updating = true;
-        let prom = fetch('/get?id=' + App.id + '&part=' + App.part)
+        let prom = fetch('/api/get?id=' + App.id + '&part=' + App.part)
             .then(response => {
                 switch (response.status) {
                     case 200:
@@ -83,6 +84,8 @@ export class App{
     static createSelect(){
         App.select = document.querySelector("select");
         App.select.addEventListener("change", function() {
+            // @ts-ignore
+            UIkit.offcanvas(document.getElementById('game')).hide();
             App.id = this.selectedOptions.item(0).value;
             App.part = 1;
             App.fetchMap().then(() => App.loop());
@@ -132,7 +135,8 @@ export class App{
         request.open('POST', '/api/start', true);
         request.onload = function () {
             if (this.status >= 200 && this.status < 400) {
-                App.updateSelect()
+                App.updateSelect();
+                alert("Your number: " + this.response)
             } else {
                 alert(this.response)
             }
@@ -208,7 +212,12 @@ export class App{
         request.open('POST', '/api/register', true);
         request.onload = function () {
             if (this.status >= 200 && this.status < 400) {
-                App.updatePlayers()
+                form.reset();
+                App.updatePlayers();
+                // @ts-ignore
+                UIkit.offcanvas(document.getElementById('register')).hide();
+                // @ts-ignore
+                UIkit.offcanvas(document.getElementById('game')).show();
             } else {
                 alert(this.response)
             }

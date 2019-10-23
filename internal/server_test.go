@@ -71,7 +71,7 @@ func registerTestRequest(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(registerHandle))
 	defer ts.Close()
 
-	file, _ := os.Open("../algorithms/test.go")
+	file, _ := os.Open("../test/test.go")
 	defer file.Close()
 
 	body := &bytes.Buffer{}

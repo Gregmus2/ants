@@ -25,6 +25,13 @@ export class Tile {
 
     draw(){
         this.ctx.fillStyle = this.color;
-        this.ctx.fillRect(this.x, this.y, this.w, this.h);
+        if (['black', 'brown', 'yellow'].indexOf(this.color) == -1) {
+            this.ctx.beginPath();
+            this.ctx.arc(this.x + this.w / 2, this.y+ this.w / 2,this.w / 2,0,Math.PI*2,true);
+            this.ctx.fill();
+        } else {
+            this.ctx.fillRect(this.x, this.y, this.w, this.h);
+        }
+
     }
 }

@@ -35,8 +35,8 @@ func CreateMatch(users []*global.User, ants []*global.Ant, anthills map[*global.
 		ants:                        ants,
 		area:                        area,
 		anthills:                    anthills,
-		queueAtTheCemetery:          make([]*global.Ant, 10),
-		queueAtTheMaternityHospital: make([]*global.User, 10),
+		queueAtTheCemetery:          make([]*global.Ant, 0, 10),
+		queueAtTheMaternityHospital: make([]*global.User, 0, 10),
 		s:                           s,
 		stat: &MatchStat{
 			ants:   make(map[*global.User]uint),
@@ -62,7 +62,6 @@ func (g *Match) Run(name string) {
 	part := 1
 	states := make([][][]string, 0, global.Config.MatchPartSize)
 	// todo give position of ants by start
-	// todo add anthills. All ants born in anthills
 	for g.stat.CountLiving() > 1 && part < global.Config.MatchPartsLimit {
 		for i := 0; i < len(g.ants); i++ {
 			ant := g.ants[i]
@@ -71,7 +70,7 @@ func (g *Match) Run(name string) {
 			}
 
 			fieldTypes := g.area.TypesSlice(ant)
-			// todo give round to 'Do' function
+			// todo provide round to 'Do' function
 			field, action := g.ants[i].User.Algorithm().Do(fieldTypes)
 			pos := g.area.RelativePosition(ant.Pos, field)
 			g.do(ant, pos, action)
@@ -80,9 +79,9 @@ func (g *Match) Run(name string) {
 		for i := 0; i < len(g.queueAtTheCemetery); i++ {
 			g.queueAtTheCemetery[i].IsDead = true
 		}
-		g.queueAtTheCemetery = make([]*global.Ant, 10)
+		g.queueAtTheCemetery = make([]*global.Ant, 0, 10)
 
-		latecomers := make([]*global.User, 10)
+		latecomers := make([]*global.User, 0, 10)
 		for _, user := range g.queueAtTheMaternityHospital {
 			ok := g.giveBirth(user)
 			if !ok {
@@ -139,11 +138,13 @@ func (g *Match) do(ant *global.Ant, targetPos global.Pos, action pkg.Action) {
 	target := g.area.ByPos(targetPos)
 	switch action {
 	// todo check if the target has already dead
+	// todo need order of actions (all attacks, after all moves e.t.c.)
 	case pkg.AttackAction:
 		if target.Type != pkg.AntField {
 			break
 		}
 
+		// todo handle anthill attack
 		g.queueAtTheCemetery = append(g.queueAtTheCemetery, target.Ant)
 		g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
 		g.stat.Kill(ant.User, target.Ant.User)
@@ -156,6 +157,7 @@ func (g *Match) do(ant *global.Ant, targetPos global.Pos, action pkg.Action) {
 		}
 
 		g.queueAtTheMaternityHospital = append(g.queueAtTheMaternityHospital, ant.User)
+		g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
 
 		break
 
@@ -192,6 +194,8 @@ func (g *Match) giveBirth(user *global.User) bool {
 		g.area[anthill.BirthPos.X()][anthill.BirthPos.Y()] = global.CreateAnt(baby)
 		g.ants = append(g.ants, baby)
 		g.stat.ants[user]++
+
+		return true
 	}
 
 	return false
