@@ -30,7 +30,8 @@ func prepareGame(names []string) (string, error) {
 		users = append(users, user)
 	}
 
-	builder, err := game.NewMatchBuilder(global.Config.AreaSize, users)
+	id := strconv.Itoa(global.Random.Intn(1000))
+	builder, err := game.NewMatchBuilder(id, global.Config.AreaSize, users)
 	if err != nil {
 		return "", err
 	}
@@ -39,9 +40,8 @@ func prepareGame(names []string) (string, error) {
 	builder.BuildAnts()
 	builder.BuildFood(0.01, 0.03, len(names), true)
 
-	id := strconv.Itoa(global.Random.Intn(1000))
 	matches[id] = builder.BuildMatch(storage)
-	go matches[id].Run(id)
+	go matches[id].Run()
 
 	return id, nil
 }

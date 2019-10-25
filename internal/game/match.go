@@ -13,36 +13,42 @@ import (
 type MatchStat struct {
 	ants   map[*global.User]uint
 	dead   map[*global.User]uint
-	killed map[*global.User]uint
+	killed map[*global.User]float64
 }
 
 type Match struct {
+	name                        string
 	users                       []*global.User
 	ants                        []*global.Ant
 	anthills                    map[*global.User][]global.Anthill
 	area                        global.Area
-	queueAtTheCemetery          []*global.Ant
 	queueAtTheMaternityHospital []*global.User
 	stat                        *MatchStat
 	s                           global.Storage
+	round                       int
+	part                        int
+	states                      [][][]string
 }
 
 const matchesCollection string = "matches"
 
-func CreateMatch(users []*global.User, ants []*global.Ant, anthills map[*global.User][]global.Anthill, area global.Area, s global.Storage) *Match {
+func CreateMatch(name string, users []*global.User, ants []*global.Ant, anthills map[*global.User][]global.Anthill, area global.Area, s global.Storage) *Match {
 	match := &Match{
+		name:                        name,
 		users:                       users,
 		ants:                        ants,
 		area:                        area,
 		anthills:                    anthills,
-		queueAtTheCemetery:          make([]*global.Ant, 0, 10),
 		queueAtTheMaternityHospital: make([]*global.User, 0, 10),
 		s:                           s,
 		stat: &MatchStat{
 			ants:   make(map[*global.User]uint),
 			dead:   make(map[*global.User]uint),
-			killed: make(map[*global.User]uint),
+			killed: make(map[*global.User]float64),
 		},
+		round:  1,
+		part:   1,
+		states: make([][][]string, 0, global.Config.MatchPartSize),
 	}
 
 	for _, user := range users {
@@ -56,58 +62,144 @@ func CreateMatch(users []*global.User, ants []*global.Ant, anthills map[*global.
 	return match
 }
 
-func (g *Match) Run(name string) {
-	matchPartSizeFloat := float64(global.Config.MatchPartSize)
-	round := 1
-	part := 1
-	states := make([][][]string, 0, global.Config.MatchPartSize)
+func (g *Match) Run() {
 	// todo give position of ants by start
-	for g.stat.CountLiving() > 1 && part < global.Config.MatchPartsLimit {
-		for i := 0; i < len(g.ants); i++ {
-			ant := g.ants[i]
-			if ant.IsDead == true {
-				continue
-			}
+	for g.isOver() {
+		actions := g.collectActions()
+		g.play(actions)
+		g.birthStep()
 
-			fieldTypes := g.area.TypesSlice(ant)
-			// todo provide round to 'Do' function
-			field, action := g.ants[i].User.Algorithm().Do(fieldTypes)
-			pos := g.area.RelativePosition(ant.Pos, field)
-			g.do(ant, pos, action)
-		}
-
-		for i := 0; i < len(g.queueAtTheCemetery); i++ {
-			g.queueAtTheCemetery[i].IsDead = true
-		}
-		g.queueAtTheCemetery = make([]*global.Ant, 0, 10)
-
-		latecomers := make([]*global.User, 0, 10)
-		for _, user := range g.queueAtTheMaternityHospital {
-			ok := g.giveBirth(user)
-			if !ok {
-				latecomers = append(latecomers, user)
-			}
-		}
-		g.queueAtTheMaternityHospital = latecomers
-
-		states = append(states, g.area.ToColorSlice())
-		if math.Mod(float64(round), matchPartSizeFloat) == 0 {
-			g.saveRound(name, part, states)
-			states = make([][][]string, 0, global.Config.MatchPartSize)
-			part++
-		}
-		round++
+		g.switchRound()
 	}
 }
 
-func (g *Match) saveRound(name string, part int, states [][][]string) {
+func (g *Match) isOver() bool {
+	return g.stat.CountLiving() > 1 && g.part < global.Config.MatchPartsLimit
+}
+
+func (g *Match) switchRound() {
+	g.states = append(g.states, g.area.ToColorSlice())
+	matchPartSizeFloat := float64(global.Config.MatchPartSize)
+	if math.Mod(float64(g.round), matchPartSizeFloat) == 0 {
+		g.savePart()
+		g.states = make([][][]string, 0, global.Config.MatchPartSize)
+		g.part++
+	}
+	g.round++
+}
+
+func (g *Match) collectActions() map[pkg.Action]map[global.Pos]global.Ants {
+	actions := make(map[pkg.Action]map[global.Pos]global.Ants)
+	for _, ant := range g.ants {
+		// todo can I remove dead ants from g.ants?
+		if ant.IsDead == true {
+			continue
+		}
+
+		fieldTypes := g.area.NearestArea(ant)
+		// todo provide round to 'Do' function
+		field, action := ant.User.Algorithm().Do(fieldTypes)
+		pos := g.area.RelativePosition(ant.Pos, field)
+		if _, ok := actions[action]; !ok {
+			actions[action] = make(map[global.Pos]global.Ants)
+		}
+
+		actions[action][pos] = append(actions[action][pos], ant)
+	}
+
+	return actions
+}
+
+// todo write this logic to instruction
+func (g *Match) play(actions map[pkg.Action]map[global.Pos]global.Ants) {
+	if fields, ok := actions[pkg.AttackAction]; ok {
+		for targetPos, ants := range fields {
+			target := g.area.ByPos(targetPos)
+			if target.Type != pkg.AntField {
+				continue
+			}
+
+			if target.Ant.IsDead {
+				// todo remove after tests
+				panic("BUG: attempt to attack ant, which has already dead")
+			}
+
+			target.Ant.IsDead = true
+			g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
+			g.stat.Kill(ants, target.Ant.User)
+		}
+	}
+
+	if fields, ok := actions[pkg.DieAction]; ok {
+		for _, ants := range fields {
+			for _, ant := range ants {
+				if ant.IsDead {
+					continue
+				}
+
+				ant.IsDead = true
+				g.area[ant.Pos.X()][ant.Pos.Y()] = global.CreateEmptyObject()
+				g.stat.Die(ant.User)
+			}
+		}
+	}
+
+	if fields, ok := actions[pkg.EatAction]; ok {
+		for targetPos, ants := range fields {
+			target := g.area.ByPos(targetPos)
+			if target.Type != pkg.FoodField {
+				continue
+			}
+
+			if len(ants.Living()) > 1 {
+				continue
+			}
+
+			ant := ants[0]
+			g.queueAtTheMaternityHospital = append(g.queueAtTheMaternityHospital, ant.User)
+			g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
+		}
+	}
+
+	if fields, ok := actions[pkg.MoveAction]; ok {
+		for targetPos, ants := range fields {
+			target := g.area.ByPos(targetPos)
+			if target.Type != pkg.EmptyField {
+				continue
+			}
+
+			if len(ants.Living()) > 1 {
+				continue
+			}
+
+			// todo in that case ant can move to field, where another ant was in that round
+			ant := ants[0]
+			g.area[targetPos.X()][targetPos.Y()] = g.area[ant.Pos.X()][ant.Pos.Y()]
+			g.area[ant.Pos.X()][ant.Pos.Y()] = global.CreateEmptyObject()
+			ant.Pos = targetPos
+		}
+	}
+}
+
+func (g *Match) birthStep() {
+	latecomers := make([]*global.User, 0, 10)
+	for _, user := range g.queueAtTheMaternityHospital {
+		ok := g.giveBirth(user)
+		if !ok {
+			latecomers = append(latecomers, user)
+		}
+	}
+	g.queueAtTheMaternityHospital = latecomers
+}
+
+func (g *Match) savePart() {
 	buf := &bytes.Buffer{}
-	err := gob.NewEncoder(buf).Encode(states)
+	err := gob.NewEncoder(buf).Encode(g.states)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = g.s.Put(matchesCollection, name+strconv.Itoa(part), buf.Bytes())
+	err = g.s.Put(matchesCollection, g.name+strconv.Itoa(g.part), buf.Bytes())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -134,52 +226,6 @@ func (g *Match) LoadRound(name string, part string) [][][]string {
 	return result
 }
 
-func (g *Match) do(ant *global.Ant, targetPos global.Pos, action pkg.Action) {
-	target := g.area.ByPos(targetPos)
-	switch action {
-	// todo check if the target has already dead
-	// todo need order of actions (all attacks, after all moves e.t.c.)
-	case pkg.AttackAction:
-		if target.Type != pkg.AntField {
-			break
-		}
-
-		// todo handle anthill attack
-		g.queueAtTheCemetery = append(g.queueAtTheCemetery, target.Ant)
-		g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
-		g.stat.Kill(ant.User, target.Ant.User)
-		break
-
-	// @todo we need to handle case, when two ants want to eat one food
-	case pkg.EatAction:
-		if target.Type != pkg.FoodField {
-			break
-		}
-
-		g.queueAtTheMaternityHospital = append(g.queueAtTheMaternityHospital, ant.User)
-		g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
-
-		break
-
-	case pkg.MoveAction:
-		if target.Type != pkg.EmptyField {
-			break
-		}
-
-		g.area[targetPos.X()][targetPos.Y()] = g.area[ant.Pos.X()][ant.Pos.Y()]
-		g.area[ant.Pos.X()][ant.Pos.Y()] = global.CreateEmptyObject()
-		ant.Pos = targetPos
-		break
-
-	case pkg.DieAction:
-		g.queueAtTheCemetery = append(g.queueAtTheCemetery, ant)
-		g.area[ant.Pos.X()][ant.Pos.Y()] = global.CreateEmptyObject()
-		g.stat.ants[ant.User]--
-		g.stat.dead[ant.User]++
-		break
-	}
-}
-
 func (g *Match) giveBirth(user *global.User) bool {
 	for _, anthill := range g.anthills[user] {
 		if g.area[anthill.BirthPos.X()][anthill.BirthPos.Y()].Type != pkg.EmptyField {
@@ -201,10 +247,18 @@ func (g *Match) giveBirth(user *global.User) bool {
 	return false
 }
 
-func (s *MatchStat) Kill(who *global.User, whom *global.User) {
-	s.ants[whom]--
-	s.dead[whom]++
-	s.killed[who]++
+func (s *MatchStat) Kill(killers []*global.Ant, victim *global.User) {
+	s.Die(victim)
+
+	piece := math.Round(float64(1/len(killers)*100)) / 100
+	for _, killer := range killers {
+		s.killed[killer.User] += piece
+	}
+}
+
+func (s *MatchStat) Die(who *global.User) {
+	s.ants[who]--
+	s.dead[who]++
 }
 
 func (s *MatchStat) CountLiving() int {

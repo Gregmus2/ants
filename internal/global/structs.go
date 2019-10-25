@@ -28,3 +28,16 @@ type ConfigType struct {
 	MatchPartSize   int
 	BasePath        string
 }
+
+type Ants []*Ant
+
+func (ants Ants) Living() []*Ant {
+	living := make([]*Ant, 0, len(ants))
+	for _, ant := range ants {
+		if !ant.IsDead {
+			living = append(living, ant)
+		}
+	}
+
+	return living
+}

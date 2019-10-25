@@ -9,6 +9,7 @@ import (
 )
 
 type MatchBuilder struct {
+	name     string
 	areaSize int
 	ants     []*global.Ant
 	players  []*global.User
@@ -16,12 +17,12 @@ type MatchBuilder struct {
 	anthills map[*global.User][]global.Anthill
 }
 
-func NewMatchBuilder(areaSize int, players []*global.User) (*MatchBuilder, error) {
+func NewMatchBuilder(name string, areaSize int, players []*global.User) (*MatchBuilder, error) {
 	if len(players) != 2 && len(players) != 4 {
 		return nil, errors.New("wrong number of players")
 	}
 
-	return &MatchBuilder{areaSize: areaSize, players: players}, nil
+	return &MatchBuilder{name: name, areaSize: areaSize, players: players}, nil
 }
 
 func (gb *MatchBuilder) BuildAnts() {
@@ -124,7 +125,7 @@ func (gb *MatchBuilder) BuildMatch(s global.Storage) *Match {
 		log.Fatal("builder must have at least players and ants")
 	}
 
-	return CreateMatch(gb.players, gb.ants, gb.anthills, gb.area, s)
+	return CreateMatch(gb.name, gb.players, gb.ants, gb.anthills, gb.area, s)
 }
 
 func (gb *MatchBuilder) foodUniformDistribution(foodCount int) {

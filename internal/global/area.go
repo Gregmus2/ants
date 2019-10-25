@@ -19,7 +19,7 @@ func (a Area) ToColorSlice() [][]string {
 	return colorSlice
 }
 
-func (a Area) TypesSlice(ant *Ant) [9]pkg.FieldType {
+func (a Area) NearestArea(ant *Ant) [9]pkg.FieldType {
 	/*  It's fields near ant in that order:
 			0 1 2
 			3 4 5
