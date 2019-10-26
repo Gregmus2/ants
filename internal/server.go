@@ -51,7 +51,7 @@ func startHandle(w http.ResponseWriter, r *http.Request) {
 func pipesHandle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	response := make([]string, 0, len(matches))
-	for name, _ := range matches {
+	for name := range matches {
 		response = append(response, name)
 	}
 
@@ -125,7 +125,6 @@ func registerHandle(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprint(w, err)
 		return
 	}
-
 }
 
 func sizeHandle(w http.ResponseWriter, r *http.Request) {

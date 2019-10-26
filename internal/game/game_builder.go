@@ -3,9 +3,10 @@ package game
 import (
 	"ants/internal/global"
 	"errors"
-	pkg "github.com/gregmus2/ants-pkg"
 	"log"
 	"math"
+
+	pkg "github.com/gregmus2/ants-pkg"
 )
 
 type MatchBuilder struct {

@@ -1,0 +1,9 @@
+linters:
+  enable-all: true
+  disable:
+    - bodyclose
+    - depguard
+    - dogsled
+    - gocritic
+    - godox
+  fast: false

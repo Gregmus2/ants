@@ -3,10 +3,11 @@ package global
 import (
 	"encoding/json"
 	"errors"
-	pkg "github.com/gregmus2/ants-pkg"
 	"log"
 	"plugin"
 	"strings"
+
+	pkg "github.com/gregmus2/ants-pkg"
 )
 
 type User struct {

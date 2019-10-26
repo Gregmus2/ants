@@ -116,7 +116,7 @@ func registerTestRequest(t *testing.T, name string, color string) {
 	ts := httptest.NewServer(http.HandlerFunc(registerHandle))
 	defer ts.Close()
 
-	file, _ := os.Open("../test/" + name + ".go")
+	file, _ := os.Open("../testdata/" + name + ".go")
 	defer file.Close()
 
 	body := &bytes.Buffer{}

@@ -1,8 +1,9 @@
 package global
 
 import (
-	pkg "github.com/gregmus2/ants-pkg"
 	"math"
+
+	pkg "github.com/gregmus2/ants-pkg"
 )
 
 type Area [][]*Object

@@ -4,10 +4,11 @@ import (
 	"ants/internal/global"
 	"bytes"
 	"encoding/gob"
-	pkg "github.com/gregmus2/ants-pkg"
 	"log"
 	"math"
 	"strconv"
+
+	pkg "github.com/gregmus2/ants-pkg"
 )
 
 type MatchStat struct {

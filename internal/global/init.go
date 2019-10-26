@@ -1,12 +1,13 @@
 package global
 
 import (
-	"github.com/joho/godotenv"
 	"log"
 	"math/rand"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 var Random *rand.Rand

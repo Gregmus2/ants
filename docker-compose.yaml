@@ -9,7 +9,7 @@ services:
     working_dir: /go/src/ants
     environment:
       - GO111MODULE=on
-    entrypoint: 'sh init.sh'
+    entrypoint: 'sh docker/init.sh'
 
   node:
     image: node:10.13.0-alpine
