@@ -1,0 +1,4 @@
+area_size: 100
+match:
+  parts_limit: 200
+  part_size: 100

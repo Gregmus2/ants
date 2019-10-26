@@ -22,13 +22,6 @@ type Anthill struct {
 	BirthPos Pos
 }
 
-type ConfigType struct {
-	AreaSize        int
-	MatchPartsLimit int
-	MatchPartSize   int
-	BasePath        string
-}
-
 type Ants []*Ant
 
 func (ants Ants) Living() []*Ant {

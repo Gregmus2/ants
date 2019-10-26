@@ -49,7 +49,7 @@ func CreateMatch(name string, users []*global.User, ants []*global.Ant, anthills
 		},
 		round:  1,
 		part:   1,
-		states: make([][][]string, 0, global.Config.MatchPartSize),
+		states: make([][][]string, 0, global.Config.Match.PartSize),
 	}
 
 	for _, user := range users {
@@ -75,15 +75,15 @@ func (g *Match) Run() {
 }
 
 func (g *Match) isOver() bool {
-	return g.stat.CountLiving() > 1 && g.part < global.Config.MatchPartsLimit
+	return g.stat.CountLiving() > 1 && g.part < global.Config.Match.PartsLimit
 }
 
 func (g *Match) switchRound() {
 	g.states = append(g.states, g.area.ToColorSlice())
-	matchPartSizeFloat := float64(global.Config.MatchPartSize)
+	matchPartSizeFloat := float64(global.Config.Match.PartSize)
 	if math.Mod(float64(g.round), matchPartSizeFloat) == 0 {
 		g.savePart()
-		g.states = make([][][]string, 0, global.Config.MatchPartSize)
+		g.states = make([][][]string, 0, global.Config.Match.PartSize)
 		g.part++
 	}
 	g.round++
@@ -93,7 +93,7 @@ func (g *Match) collectActions() map[pkg.Action]map[global.Pos]global.Ants {
 	actions := make(map[pkg.Action]map[global.Pos]global.Ants)
 	for _, ant := range g.ants {
 		// todo can I remove dead ants from g.ants?
-		if ant.IsDead == true {
+		if ant.IsDead {
 			continue
 		}
 
@@ -207,7 +207,7 @@ func (g *Match) savePart() {
 }
 
 func (g *Match) LoadRound(name string, part string) [][][]string {
-	result := make([][][]string, 0, global.Config.MatchPartSize)
+	result := make([][][]string, 0, global.Config.Match.PartSize)
 	buf := &bytes.Buffer{}
 	rawData, err := g.s.Get(matchesCollection, name+part)
 	if err != nil {

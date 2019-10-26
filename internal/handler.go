@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"os/exec"
 	"strconv"
@@ -30,7 +31,7 @@ func prepareGame(names []string) (string, error) {
 		users = append(users, user)
 	}
 
-	id := strconv.Itoa(global.Random.Intn(1000))
+	id := strconv.Itoa(rand.Intn(1000))
 	builder, err := game.NewMatchBuilder(id, global.Config.AreaSize, users)
 	if err != nil {
 		return "", err

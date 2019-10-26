@@ -55,14 +55,14 @@ func pipesHandle(w http.ResponseWriter, r *http.Request) {
 		response = append(response, name)
 	}
 
-	responseJson, err := json.Marshal(response)
+	responseJSON, err := json.Marshal(response)
 	if err != nil {
 		w.WriteHeader(500)
 		_, _ = fmt.Fprint(w, err)
 		return
 	}
 
-	_, err = w.Write(responseJson)
+	_, err = w.Write(responseJSON)
 	if err != nil {
 		w.WriteHeader(500)
 		_, _ = fmt.Fprint(w, err)
@@ -79,14 +79,14 @@ func playersHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseJson, err := json.Marshal(names)
+	responseJSON, err := json.Marshal(names)
 	if err != nil {
 		w.WriteHeader(500)
 		_, _ = fmt.Fprint(w, err)
 		return
 	}
 
-	_, err = w.Write(responseJson)
+	_, err = w.Write(responseJSON)
 	if err != nil {
 		w.WriteHeader(500)
 		_, _ = fmt.Fprint(w, err)
@@ -129,16 +129,16 @@ func registerHandle(w http.ResponseWriter, r *http.Request) {
 
 func sizeHandle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	_, err := fmt.Fprintf(w, strconv.Itoa(global.Config.AreaSize))
+	_, err := fmt.Fprint(w, strconv.Itoa(global.Config.AreaSize))
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
 func getHandle(w http.ResponseWriter, r *http.Request) {
-	_, okId := r.URL.Query()["id"]
+	_, okID := r.URL.Query()["id"]
 	_, okPart := r.URL.Query()["part"]
-	if !okId || !okPart {
+	if !okID || !okPart {
 		w.WriteHeader(400)
 		_, _ = fmt.Fprint(w, "id, part query param must be exist")
 		return
@@ -161,5 +161,5 @@ func getHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, _ = fmt.Fprintf(w, string(jsonResponse))
+	_, _ = fmt.Fprint(w, string(jsonResponse))
 }

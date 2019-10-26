@@ -19,6 +19,8 @@ import (
 )
 
 func TestServe(t *testing.T) {
+	global.InitConfig()
+
 	if len(pipesTestRequest(t)) != 0 {
 		t.Error("pipes must be empty by start")
 	}
@@ -42,7 +44,7 @@ func TestServe(t *testing.T) {
 
 	time.Sleep(1000 * time.Millisecond)
 	area := getTestRequest(t, id)
-	if len(area) != global.Config.MatchPartSize {
+	if len(area) != global.Config.Match.PartSize {
 		t.Error("wrong batch size")
 	}
 

@@ -39,16 +39,16 @@ func (a Area) NearestArea(ant *Ant) [9]pkg.FieldType {
 }
 
 /* add field with format
-0 1 2
-3 4 5
-6 7 8
-	to input position
+	0 1 2
+	3 4 5
+	6 7 8
+to input position
 */
 // todo move it to ants-pkg
 func (a Area) RelativePosition(pos Pos, field uint8) Pos {
 	return Pos{
-		pos.X() + uint(math.Mod(float64(field+3), 3)) - 1,
-		pos.Y() + uint(math.Floor(float64(field/3))) - 1,
+		pos.X() + uint(math.Mod(float64(field+3), 3)-1),
+		pos.Y() + uint(math.Floor(float64(field/3))-1), //nolint
 	}
 }
 

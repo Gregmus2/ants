@@ -6,4 +6,7 @@ linters:
     - dogsled
     - gocritic
     - godox
+    - gochecknoglobals
+    - gochecknoinits
+    - wsl
   fast: false

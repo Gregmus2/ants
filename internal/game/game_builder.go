@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"math"
+	"math/rand"
 
 	pkg "github.com/gregmus2/ants-pkg"
 )
@@ -42,7 +43,6 @@ func (gb *MatchBuilder) BuildAnts() {
 			{{quartSize, halfSize}, {quartSize + 1, halfSize}},
 			{{uint(gb.areaSize) - quartSize, halfSize}, {uint(gb.areaSize) - quartSize - 1, halfSize}},
 		}
-		break
 	case 4:
 		octoSize := uint(math.Round(float64(gb.areaSize / 8)))
 		lastOctoPiece := uint(gb.areaSize) - octoSize
@@ -52,7 +52,6 @@ func (gb *MatchBuilder) BuildAnts() {
 			{{octoSize, lastOctoPiece}, {octoSize + 1, lastOctoPiece - 1}},
 			{{lastOctoPiece, lastOctoPiece}, {lastOctoPiece - 1, lastOctoPiece - 1}},
 		}
-		break
 	default:
 		log.Fatal("wrong number of players")
 	}
@@ -100,7 +99,7 @@ func (gb *MatchBuilder) BuildFood(percentFrom float32, percentTo float32, min in
 		log.Fatal("builder must have ants and area before build food")
 	}
 
-	randomPercent := global.Random.Float32()*(percentTo-percentFrom) + percentFrom
+	randomPercent := rand.Float32()*(percentTo-percentFrom) + percentFrom
 	foodCount := int(float32(gb.areaSize*gb.areaSize) * randomPercent)
 	if foodCount < min {
 		foodCount = min
@@ -113,8 +112,8 @@ func (gb *MatchBuilder) BuildFood(percentFrom float32, percentTo float32, min in
 
 	size := gb.areaSize - 2
 	for i := 0; i < foodCount; i++ {
-		x := global.Random.Intn(size) + 1
-		y := global.Random.Intn(size) + 1
+		x := rand.Intn(size) + 1
+		y := rand.Intn(size) + 1
 		if gb.area[x][y].Type != pkg.AntField {
 			gb.area[x][y] = global.CreateFood()
 		}
@@ -141,12 +140,10 @@ func (gb *MatchBuilder) foodUniformDistribution(foodCount int) {
 		xPartSize = halfSize - 1
 		yPartSize = gb.areaSize - 2
 		offsets = [][2]int{{1, 1}, {halfSize, 1}}
-		break
 	case 4:
 		xPartSize = halfSize - 1
 		yPartSize = halfSize - 1
 		offsets = [][2]int{{1, 1}, {halfSize, 1}, {1, halfSize}, {halfSize, halfSize}}
-		break
 	default:
 		log.Fatal("wrong number of ants")
 	}
@@ -157,8 +154,8 @@ func (gb *MatchBuilder) foodUniformDistribution(foodCount int) {
 		}
 
 		for j := 0; j < antsCount; j++ {
-			x := global.Random.Intn(xPartSize) + offsets[j][0]
-			y := global.Random.Intn(yPartSize) + offsets[j][1]
+			x := rand.Intn(xPartSize) + offsets[j][0]
+			y := rand.Intn(yPartSize) + offsets[j][1]
 			if gb.area[x][y].Type != pkg.AntField {
 				gb.area[x][y] = global.CreateFood()
 			}

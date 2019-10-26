@@ -54,9 +54,9 @@ func (o *Object) FieldTypeForUser(ant *Ant) pkg.FieldType {
 	if o.Type == pkg.AntField {
 		if ant.User == o.Ant.User {
 			return pkg.AllyField
-		} else {
-			return pkg.EnemyField
 		}
+
+		return pkg.EnemyField
 	}
 
 	return o.Type

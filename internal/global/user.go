@@ -70,6 +70,7 @@ func (u *User) Save() {
 		log.Print(err)
 		return
 	}
+
 	err = u.storage.Put(UserCollection, u.Name, data)
 	if err != nil {
 		log.Print(err)
