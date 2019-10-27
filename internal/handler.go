@@ -32,16 +32,16 @@ func prepareGame(names []string) (string, error) {
 	}
 
 	id := strconv.Itoa(rand.Intn(1000))
-	builder, err := game.NewMatchBuilder(id, global.Config.AreaSize, users)
+	b, err := game.NewMatchBuilder(id, global.Config.AreaSize, users)
 	if err != nil {
 		return "", err
 	}
 
-	builder.BuildArea()
-	builder.BuildAnts()
-	builder.BuildFood(0.01, 0.03, len(names), true)
+	b.BuildArea()
+	b.BuildAnts()
+	b.BuildFood(0.01, 0.03, len(names), true)
 
-	matches[id] = builder.BuildMatch(storage)
+	matches[id] = b.BuildMatch(storage)
 	go matches[id].Run()
 
 	return id, nil

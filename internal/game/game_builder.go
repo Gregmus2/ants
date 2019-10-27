@@ -27,25 +27,25 @@ func NewMatchBuilder(name string, areaSize int, players []*global.User) (*MatchB
 	return &MatchBuilder{name: name, areaSize: areaSize, players: players}, nil
 }
 
-func (gb *MatchBuilder) BuildAnts() {
-	if gb.area == nil {
+func (mb *MatchBuilder) BuildAnts() {
+	if mb.area == nil {
 		log.Fatal("builder must have area before build ants")
 	}
 
-	// [players][position, birth position]
+	// [players][position, birthQ position]
 	var positions [][2][2]uint
-	quartSize := uint(math.Round(float64(gb.areaSize / 4)))
-	halfSize := uint(math.Round(float64(gb.areaSize / 2)))
+	quartSize := uint(math.Round(float64(mb.areaSize / 4)))
+	halfSize := uint(math.Round(float64(mb.areaSize / 2)))
 
-	switch len(gb.players) {
+	switch len(mb.players) {
 	case 2:
 		positions = [][2][2]uint{
 			{{quartSize, halfSize}, {quartSize + 1, halfSize}},
-			{{uint(gb.areaSize) - quartSize, halfSize}, {uint(gb.areaSize) - quartSize - 1, halfSize}},
+			{{uint(mb.areaSize) - quartSize, halfSize}, {uint(mb.areaSize) - quartSize - 1, halfSize}},
 		}
 	case 4:
-		octoSize := uint(math.Round(float64(gb.areaSize / 8)))
-		lastOctoPiece := uint(gb.areaSize) - octoSize
+		octoSize := uint(math.Round(float64(mb.areaSize / 8)))
+		lastOctoPiece := uint(mb.areaSize) - octoSize
 		positions = [][2][2]uint{
 			{{octoSize, octoSize}, {octoSize + 1, octoSize + 1}},
 			{{lastOctoPiece, octoSize}, {lastOctoPiece - 1, octoSize + 1}},
@@ -56,89 +56,89 @@ func (gb *MatchBuilder) BuildAnts() {
 		log.Fatal("wrong number of players")
 	}
 
-	gb.anthills = make(map[*global.User][]global.Anthill)
-	for i := 0; i < len(gb.players); i++ {
-		gb.area[positions[i][0][0]][positions[i][0][1]] = global.CreateAnthill(gb.players[i])
-		gb.anthills[gb.players[i]] = append(gb.anthills[gb.players[i]], global.Anthill{
+	mb.anthills = make(map[*global.User][]global.Anthill)
+	for i := 0; i < len(mb.players); i++ {
+		mb.area[positions[i][0][0]][positions[i][0][1]] = global.CreateAnthill(mb.players[i])
+		mb.anthills[mb.players[i]] = append(mb.anthills[mb.players[i]], global.Anthill{
 			Pos:      positions[i][0],
-			User:     gb.players[i],
+			User:     mb.players[i],
 			BirthPos: positions[i][1],
 		})
 	}
 
-	gb.ants = make([]*global.Ant, 0, len(gb.players))
-	for _, anthill := range gb.anthills {
+	mb.ants = make([]*global.Ant, 0, len(mb.players))
+	for _, anthill := range mb.anthills {
 		ant := &global.Ant{
 			Pos:    anthill[0].BirthPos,
 			User:   anthill[0].User,
 			IsDead: false,
 		}
-		gb.ants = append(gb.ants, ant)
-		gb.area[anthill[0].BirthPos.X()][anthill[0].BirthPos.Y()] = global.CreateAnt(ant)
+		mb.ants = append(mb.ants, ant)
+		mb.area[anthill[0].BirthPos.X()][anthill[0].BirthPos.Y()] = global.CreateAnt(ant)
 	}
 }
 
-func (gb *MatchBuilder) BuildArea() {
-	gb.area = make([][]*global.Object, gb.areaSize)
-	lastTile := gb.areaSize - 1
-	for x := 0; x < gb.areaSize; x++ {
-		gb.area[x] = make([]*global.Object, gb.areaSize)
-		for y := 0; y < gb.areaSize; y++ {
+func (mb *MatchBuilder) BuildArea() {
+	mb.area = make([][]*global.Object, mb.areaSize)
+	lastTile := mb.areaSize - 1
+	for x := 0; x < mb.areaSize; x++ {
+		mb.area[x] = make([]*global.Object, mb.areaSize)
+		for y := 0; y < mb.areaSize; y++ {
 			// edges
 			if x == 0 || x == lastTile || y == 0 || y == lastTile {
-				gb.area[x][y] = global.CreateWall()
+				mb.area[x][y] = global.CreateWall()
 			} else {
-				gb.area[x][y] = global.CreateEmptyObject()
+				mb.area[x][y] = global.CreateEmptyObject()
 			}
 		}
 	}
 }
 
-func (gb *MatchBuilder) BuildFood(percentFrom float32, percentTo float32, min int, isUniformDistribution bool) {
-	if gb.area == nil || gb.ants == nil {
+func (mb *MatchBuilder) BuildFood(percentFrom float32, percentTo float32, min int, isUniformDistribution bool) {
+	if mb.area == nil || mb.ants == nil {
 		log.Fatal("builder must have ants and area before build food")
 	}
 
 	randomPercent := rand.Float32()*(percentTo-percentFrom) + percentFrom
-	foodCount := int(float32(gb.areaSize*gb.areaSize) * randomPercent)
+	foodCount := int(float32(mb.areaSize*mb.areaSize) * randomPercent)
 	if foodCount < min {
 		foodCount = min
 	}
 
 	if isUniformDistribution {
-		gb.foodUniformDistribution(foodCount)
+		mb.foodUniformDistribution(foodCount)
 		return
 	}
 
-	size := gb.areaSize - 2
+	size := mb.areaSize - 2
 	for i := 0; i < foodCount; i++ {
 		x := rand.Intn(size) + 1
 		y := rand.Intn(size) + 1
-		if gb.area[x][y].Type != pkg.AntField {
-			gb.area[x][y] = global.CreateFood()
+		if mb.area[x][y].Type != pkg.AntField {
+			mb.area[x][y] = global.CreateFood()
 		}
 	}
 }
 
-func (gb *MatchBuilder) BuildMatch(s global.Storage) *Match {
-	if gb.players == nil || gb.ants == nil {
+func (mb *MatchBuilder) BuildMatch(s global.Storage) *Match {
+	if mb.players == nil || mb.ants == nil {
 		log.Fatal("builder must have at least players and ants")
 	}
 
-	return CreateMatch(gb.name, gb.players, gb.ants, gb.anthills, gb.area, s)
+	return CreateMatch(mb, s)
 }
 
-func (gb *MatchBuilder) foodUniformDistribution(foodCount int) {
+func (mb *MatchBuilder) foodUniformDistribution(foodCount int) {
 	var xPartSize int
 	var yPartSize int
 	var offsets [][2]int
-	halfSize := int(math.Round(float64(gb.areaSize / 2)))
-	antsCount := len(gb.ants)
+	halfSize := int(math.Round(float64(mb.areaSize / 2)))
+	antsCount := len(mb.ants)
 	switch antsCount {
 	case 2:
 		// -1 because of walls
 		xPartSize = halfSize - 1
-		yPartSize = gb.areaSize - 2
+		yPartSize = mb.areaSize - 2
 		offsets = [][2]int{{1, 1}, {halfSize, 1}}
 	case 4:
 		xPartSize = halfSize - 1
@@ -156,8 +156,8 @@ func (gb *MatchBuilder) foodUniformDistribution(foodCount int) {
 		for j := 0; j < antsCount; j++ {
 			x := rand.Intn(xPartSize) + offsets[j][0]
 			y := rand.Intn(yPartSize) + offsets[j][1]
-			if gb.area[x][y].Type != pkg.AntField {
-				gb.area[x][y] = global.CreateFood()
+			if mb.area[x][y].Type != pkg.AntField {
+				mb.area[x][y] = global.CreateFood()
 			}
 		}
 	}

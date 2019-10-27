@@ -79,21 +79,21 @@ func (u *User) Save() {
 }
 
 func LoadAlgorithm(name string) (pkg.Algorithm, error) {
-	path := Config.BasePath + "/algorithms/" + name + ".so"
-	plug, err := plugin.Open(path)
+	p := Config.BasePath + "/algorithms/" + name + ".so"
+	plug, err := plugin.Open(p)
 	if err != nil {
 		return nil, err
 	}
 
-	symbol, err := plug.Lookup(strings.Title(name))
+	s, err := plug.Lookup(strings.Title(name))
 	if err != nil {
 		return nil, err
 	}
 
 	var algorithm pkg.Algorithm
-	algorithm, ok := symbol.(pkg.Algorithm)
+	algorithm, ok := s.(pkg.Algorithm)
 	if !ok {
-		return nil, errors.New("wrong symbol")
+		return nil, errors.New("wrong s")
 	}
 
 	return algorithm, nil

@@ -18,30 +18,30 @@ type MatchStat struct {
 }
 
 type Match struct {
-	name                        string
-	users                       []*global.User
-	ants                        []*global.Ant
-	anthills                    map[*global.User][]global.Anthill
-	area                        global.Area
-	queueAtTheMaternityHospital []*global.User
-	stat                        *MatchStat
-	s                           global.Storage
-	round                       int
-	part                        int
-	states                      [][][]string
+	name     string
+	players  []*global.User
+	ants     []*global.Ant
+	anthills map[*global.User][]global.Anthill
+	area     global.Area
+	birthQ   []*global.User
+	stat     *MatchStat
+	s        global.Storage
+	round    int
+	part     int
+	states   [][][]string
 }
 
 const matchesCollection string = "matches"
 
-func CreateMatch(name string, users []*global.User, ants []*global.Ant, anthills map[*global.User][]global.Anthill, area global.Area, s global.Storage) *Match {
+func CreateMatch(mb *MatchBuilder, s global.Storage) *Match {
 	match := &Match{
-		name:                        name,
-		users:                       users,
-		ants:                        ants,
-		area:                        area,
-		anthills:                    anthills,
-		queueAtTheMaternityHospital: make([]*global.User, 0, 10),
-		s:                           s,
+		name:     mb.name,
+		players:  mb.players,
+		ants:     mb.ants,
+		area:     mb.area,
+		anthills: mb.anthills,
+		birthQ:   make([]*global.User, 0, 10),
+		s:        s,
 		stat: &MatchStat{
 			ants:   make(map[*global.User]uint),
 			dead:   make(map[*global.User]uint),
@@ -52,10 +52,10 @@ func CreateMatch(name string, users []*global.User, ants []*global.Ant, anthills
 		states: make([][][]string, 0, global.Config.Match.PartSize),
 	}
 
-	for _, user := range users {
-		match.stat.ants[user] = 1
-		match.stat.dead[user] = 0
-		match.stat.killed[user] = 0
+	for _, player := range mb.players {
+		match.stat.ants[player] = 1
+		match.stat.dead[player] = 0
+		match.stat.killed[player] = 0
 	}
 
 	s.CreateCollectionIfNotExist(matchesCollection)
@@ -114,83 +114,99 @@ func (g *Match) collectActions() map[pkg.Action]map[global.Pos]global.Ants {
 // todo write this logic to instruction
 func (g *Match) play(actions map[pkg.Action]map[global.Pos]global.Ants) {
 	if fields, ok := actions[pkg.AttackAction]; ok {
-		for targetPos, ants := range fields {
-			target := g.area.ByPos(targetPos)
-			if target.Type != pkg.AntField {
-				continue
-			}
-
-			if target.Ant.IsDead {
-				// todo remove after tests
-				panic("BUG: attempt to attack ant, which has already dead")
-			}
-
-			target.Ant.IsDead = true
-			g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
-			g.stat.Kill(ants, target.Ant.User)
-		}
+		g.attackStep(fields)
 	}
 
 	if fields, ok := actions[pkg.DieAction]; ok {
-		for _, ants := range fields {
-			for _, ant := range ants {
-				if ant.IsDead {
-					continue
-				}
-
-				ant.IsDead = true
-				g.area[ant.Pos.X()][ant.Pos.Y()] = global.CreateEmptyObject()
-				g.stat.Die(ant.User)
-			}
-		}
+		g.suicideStep(fields)
 	}
 
 	if fields, ok := actions[pkg.EatAction]; ok {
-		for targetPos, ants := range fields {
-			target := g.area.ByPos(targetPos)
-			if target.Type != pkg.FoodField {
-				continue
-			}
-
-			if len(ants.Living()) > 1 {
-				continue
-			}
-
-			ant := ants[0]
-			g.queueAtTheMaternityHospital = append(g.queueAtTheMaternityHospital, ant.User)
-			g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
-		}
+		g.eatStep(fields)
 	}
 
 	if fields, ok := actions[pkg.MoveAction]; ok {
-		for targetPos, ants := range fields {
-			target := g.area.ByPos(targetPos)
-			if target.Type != pkg.EmptyField {
-				continue
-			}
+		g.moveStep(fields)
+	}
+}
 
-			if len(ants.Living()) > 1 {
-				continue
-			}
-
-			// todo in that case ant can move to field, where another ant was in that round
-			ant := ants[0]
-			g.area[targetPos.X()][targetPos.Y()] = g.area[ant.Pos.X()][ant.Pos.Y()]
-			g.area[ant.Pos.X()][ant.Pos.Y()] = global.CreateEmptyObject()
-			ant.Pos = targetPos
+func (g *Match) attackStep(fields map[global.Pos]global.Ants) {
+	for targetPos, ants := range fields {
+		target := g.area.ByPos(targetPos)
+		if target.Type != pkg.AntField {
+			continue
 		}
+
+		if target.Ant.IsDead {
+			// todo remove after tests
+			panic("BUG: attempt to attack ant, which has already dead")
+		}
+
+		target.Ant.IsDead = true
+		g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
+		g.stat.Kill(ants, target.Ant.User)
+	}
+}
+
+func (g *Match) suicideStep(fields map[global.Pos]global.Ants) {
+	for _, ants := range fields {
+		for _, ant := range ants {
+			if ant.IsDead {
+				continue
+			}
+
+			ant.IsDead = true
+			g.area[ant.Pos.X()][ant.Pos.Y()] = global.CreateEmptyObject()
+			g.stat.Die(ant.User)
+		}
+	}
+}
+
+func (g *Match) eatStep(fields map[global.Pos]global.Ants) {
+	for targetPos, ants := range fields {
+		target := g.area.ByPos(targetPos)
+		if target.Type != pkg.FoodField {
+			continue
+		}
+
+		if len(ants.Living()) > 1 {
+			continue
+		}
+
+		ant := ants[0]
+		g.birthQ = append(g.birthQ, ant.User)
+		g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
+	}
+}
+
+func (g *Match) moveStep(fields map[global.Pos]global.Ants) {
+	for targetPos, ants := range fields {
+		target := g.area.ByPos(targetPos)
+		if target.Type != pkg.EmptyField {
+			continue
+		}
+
+		if len(ants.Living()) > 1 {
+			continue
+		}
+
+		// todo in that case ant can move to field, where another ant was in that round
+		ant := ants[0]
+		g.area[targetPos.X()][targetPos.Y()] = g.area[ant.Pos.X()][ant.Pos.Y()]
+		g.area[ant.Pos.X()][ant.Pos.Y()] = global.CreateEmptyObject()
+		ant.Pos = targetPos
 	}
 }
 
 func (g *Match) birthStep() {
 	latecomers := make([]*global.User, 0, 10)
-	for _, user := range g.queueAtTheMaternityHospital {
+	for _, user := range g.birthQ {
 		ok := g.giveBirth(user)
 		if !ok {
 			latecomers = append(latecomers, user)
 		}
 	}
-	g.queueAtTheMaternityHospital = latecomers
+	g.birthQ = latecomers
 }
 
 func (g *Match) savePart() {

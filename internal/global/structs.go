@@ -25,12 +25,12 @@ type Anthill struct {
 type Ants []*Ant
 
 func (ants Ants) Living() []*Ant {
-	living := make([]*Ant, 0, len(ants))
+	l := make([]*Ant, 0, len(ants))
 	for _, ant := range ants {
 		if !ant.IsDead {
-			living = append(living, ant)
+			l = append(l, ant)
 		}
 	}
 
-	return living
+	return l
 }

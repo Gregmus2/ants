@@ -27,8 +27,8 @@ func InitConfig() {
 		log.Fatalf("Fatal error config file: %s \n", err)
 	}
 
-	decoder := yaml.NewDecoder(f)
-	err = decoder.Decode(&Config)
+	d := yaml.NewDecoder(f)
+	err = d.Decode(&Config)
 	if err != nil {
 		log.Fatalf("Fatal error config file: %s \n", err)
 	}

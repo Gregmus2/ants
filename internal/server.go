@@ -25,23 +25,20 @@ func Serve() {
 func startHandle(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(400)
+		badRequest(w, err)
 		return
 	}
 
 	namesString := r.PostFormValue("names")
 	if namesString == "" {
-		w.WriteHeader(400)
-		_, _ = fmt.Fprint(w, "names have blank values")
+		badRequest(w, "names have blank values")
 		return
 	}
 
-	names := strings.Split(namesString, ",")
-	id, err := prepareGame(names)
+	n := strings.Split(namesString, ",")
+	id, err := prepareGame(n)
 	if err != nil {
-		w.WriteHeader(400)
-		_, _ = fmt.Fprint(w, err)
+		badRequest(w, err)
 		return
 	}
 
@@ -55,17 +52,15 @@ func pipesHandle(w http.ResponseWriter, r *http.Request) {
 		response = append(response, name)
 	}
 
-	responseJSON, err := json.Marshal(response)
+	res, err := json.Marshal(response)
 	if err != nil {
-		w.WriteHeader(500)
-		_, _ = fmt.Fprint(w, err)
+		serverError(w, err)
 		return
 	}
 
-	_, err = w.Write(responseJSON)
+	_, err = w.Write(res)
 	if err != nil {
-		w.WriteHeader(500)
-		_, _ = fmt.Fprint(w, err)
+		serverError(w, err)
 		return
 	}
 }
@@ -74,22 +69,19 @@ func playersHandle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	names, err := global.GetNames(storage)
 	if err != nil {
-		w.WriteHeader(500)
-		_, _ = fmt.Fprint(w, err)
+		serverError(w, err)
 		return
 	}
 
-	responseJSON, err := json.Marshal(names)
+	res, err := json.Marshal(names)
 	if err != nil {
-		w.WriteHeader(500)
-		_, _ = fmt.Fprint(w, err)
+		serverError(w, err)
 		return
 	}
 
-	_, err = w.Write(responseJSON)
+	_, err = w.Write(res)
 	if err != nil {
-		w.WriteHeader(500)
-		_, _ = fmt.Fprint(w, err)
+		serverError(w, err)
 		return
 	}
 }
@@ -97,32 +89,27 @@ func playersHandle(w http.ResponseWriter, r *http.Request) {
 func registerHandle(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
-		_, _ = fmt.Fprint(w, err)
-		w.WriteHeader(400)
+		badRequest(w, err)
 		return
 	}
 
 	name := r.FormValue("name")
 	color := r.FormValue("color")
 	if name == "" || color == "" {
-		w.WriteHeader(400)
-		_, _ = fmt.Fprint(w, "name or color have blank values")
+		badRequest(w, "name or color have blank values")
 		return
 	}
 
 	file, _, err := r.FormFile("algorithm")
 	if err != nil {
-		w.WriteHeader(400)
-		_, _ = fmt.Fprint(w, "Error Retrieving the File")
-		_, _ = fmt.Fprint(w, err)
+		badRequest(w, "Error Retrieving the File: "+err.Error())
 		return
 	}
 	defer file.Close()
 
 	err = registration(name, color, file)
 	if err != nil {
-		w.WriteHeader(500)
-		_, _ = fmt.Fprint(w, err)
+		serverError(w, err)
 		return
 	}
 }
@@ -139,8 +126,7 @@ func getHandle(w http.ResponseWriter, r *http.Request) {
 	_, okID := r.URL.Query()["id"]
 	_, okPart := r.URL.Query()["part"]
 	if !okID || !okPart {
-		w.WriteHeader(400)
-		_, _ = fmt.Fprint(w, "id, part query param must be exist")
+		badRequest(w, "id, part query param must be exist")
 		return
 	}
 	id := r.URL.Query()["id"][0]
@@ -149,17 +135,30 @@ func getHandle(w http.ResponseWriter, r *http.Request) {
 	// @todo give pipes different names like alpha and other
 	match, ok := matches[id]
 	if !ok {
-		w.WriteHeader(404)
-		_, _ = fmt.Fprintf(w, "Not found")
+		notFound(w)
 		return
 	}
 
-	jsonResponse, err := json.Marshal(match.LoadRound(id, part))
+	res, err := json.Marshal(match.LoadRound(id, part))
 	if err != nil {
-		w.WriteHeader(500)
-		_, _ = fmt.Fprint(w, err)
+		serverError(w, err)
 		return
 	}
 
-	_, _ = fmt.Fprint(w, string(jsonResponse))
+	_, _ = fmt.Fprint(w, string(res))
+}
+
+func serverError(w http.ResponseWriter, msg interface{}) {
+	w.WriteHeader(500)
+	_, _ = fmt.Fprint(w, msg)
+}
+
+func notFound(w http.ResponseWriter) {
+	w.WriteHeader(404)
+	_, _ = fmt.Fprintf(w, "Not found")
+}
+
+func badRequest(w http.ResponseWriter, msg interface{}) {
+	w.WriteHeader(400)
+	_, _ = fmt.Fprint(w, msg)
 }
