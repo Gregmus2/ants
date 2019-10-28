@@ -98,9 +98,8 @@ func (g *Match) collectActions() map[pkg.Action]map[pkg.Pos]global.Ants {
 		}
 
 		fieldTypes := g.area.NearestArea(ant)
-		// htodo provide round to 'Do' function
-		field, action := ant.User.Algorithm().Do(fieldTypes)
-		pos := g.area.RelativePosition(ant.Pos, field)
+		field, action := ant.User.Algorithm().Do(fieldTypes, g.round*g.part)
+		pos := ant.Pos.RelativePosition(field)
 		if _, ok := actions[action]; !ok {
 			actions[action] = make(map[pkg.Pos]global.Ants)
 		}
@@ -234,6 +233,7 @@ func (g *Match) birthStep() {
 	g.birthQ = latecomers
 }
 
+// todo remove old parts or load on restart
 func (g *Match) savePart() {
 	buf := &bytes.Buffer{}
 	err := gob.NewEncoder(buf).Encode(g.states)

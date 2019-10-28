@@ -1,8 +1,6 @@
 package global
 
 import (
-	"math"
-
 	pkg "github.com/gregmus2/ants-pkg"
 )
 
@@ -56,20 +54,6 @@ func (a Area) CalcAtkPower(target *Ant, attacker *Ant) int {
 	}
 
 	return power
-}
-
-/* add field with format
-	0 1 2
-	3 4 5
-	6 7 8
-to input position
-*/
-// htodo move it to ants-pkg
-func (a Area) RelativePosition(pos pkg.Pos, field uint8) pkg.Pos {
-	return pkg.Pos{
-		pos.X() + uint(math.Mod(float64(field+3), 3)-1),
-		pos.Y() + uint(math.Floor(float64(field/3))-1), //nolint
-	}
 }
 
 func (a Area) ByPos(pos pkg.Pos) *Object {

@@ -20,6 +20,7 @@ func init() {
 	matches = make(map[string]*game.Match)
 }
 
+// todo wrap errors with github.com/pkg/errors
 func prepareGame(names []string) (string, error) {
 	users := make([]*global.User, 0, len(names))
 	for i := 0; i < len(names); i++ {
