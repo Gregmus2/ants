@@ -86,6 +86,7 @@ export class App{
         App.select.addEventListener("change", function() {
             // @ts-ignore
             UIkit.offcanvas(document.getElementById('game')).hide();
+            App.buffer = [];
             App.id = this.selectedOptions.item(0).value;
             App.part = 1;
             App.fetchMap().then(() => App.loop());
