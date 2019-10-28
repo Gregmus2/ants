@@ -142,9 +142,27 @@ func (g *Match) attackStep(fields map[global.Pos]global.Ants) {
 			panic("BUG: attempt to attack ant, which has already dead")
 		}
 
+		killers := make([]*global.User, 0, 1)
+		bestPower := 0
+		for _, ant := range ants {
+			power := g.area.CalcAtkPower(target.Ant, ant)
+			switch {
+			case power <= 0 || power < bestPower:
+				continue
+			case power == bestPower:
+				killers = append(killers, ant.User)
+			default:
+				killers = []*global.User{ant.User}
+			}
+		}
+
+		if len(killers) <= 0 {
+			continue
+		}
+
 		target.Ant.IsDead = true
 		g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
-		g.stat.Kill(ants, target.Ant.User)
+		g.stat.Kill(killers, target.Ant.User)
 	}
 }
 
@@ -264,12 +282,12 @@ func (g *Match) giveBirth(user *global.User) bool {
 	return false
 }
 
-func (s *MatchStat) Kill(killers []*global.Ant, victim *global.User) {
+func (s *MatchStat) Kill(killers []*global.User, victim *global.User) {
 	s.Die(victim)
 
 	piece := math.Round(float64(1/len(killers)*100)) / 100
 	for _, killer := range killers {
-		s.killed[killer.User] += piece
+		s.killed[killer] += piece
 	}
 }
 

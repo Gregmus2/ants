@@ -38,6 +38,26 @@ func (a Area) NearestArea(ant *Ant) [9]pkg.FieldType {
 	return fieldTypes
 }
 
+func (a Area) CalcAtkPower(target *Ant, attacker *Ant) int {
+	power := 0
+	for y := target.Pos.Y() - 1; y <= target.Pos.Y()+1; y++ {
+		for x := target.Pos.X() - 1; x <= target.Pos.X()+1; x++ {
+			if a[x][y].Type != pkg.AntField {
+				continue
+			}
+
+			switch a[x][y].Ant.User {
+			case target.User:
+				power--
+			case attacker.User:
+				power++
+			}
+		}
+	}
+
+	return power
+}
+
 /* add field with format
 	0 1 2
 	3 4 5
