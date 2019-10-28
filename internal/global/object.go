@@ -2,7 +2,6 @@ package global
 
 import pkg "github.com/gregmus2/ants-pkg"
 
-// todo object fields must be unexported because of security
 type Object struct {
 	Type  pkg.FieldType
 	Color string

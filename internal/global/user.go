@@ -93,7 +93,7 @@ func LoadAlgorithm(name string) (pkg.Algorithm, error) {
 	var algorithm pkg.Algorithm
 	algorithm, ok := s.(pkg.Algorithm)
 	if !ok {
-		return nil, errors.New("wrong s")
+		return nil, errors.New("wrong symbol")
 	}
 
 	return algorithm, nil

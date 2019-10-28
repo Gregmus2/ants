@@ -1,25 +1,17 @@
 package global
 
-type Pos [2]uint
-
-func (p *Pos) X() uint {
-	return p[0]
-}
-
-func (p *Pos) Y() uint {
-	return p[1]
-}
+import pkg "github.com/gregmus2/ants-pkg"
 
 type Ant struct {
-	Pos    Pos
+	Pos    pkg.Pos
 	User   *User
 	IsDead bool
 }
 
 type Anthill struct {
-	Pos      Pos
+	Pos      pkg.Pos
 	User     *User
-	BirthPos Pos
+	BirthPos pkg.Pos
 }
 
 type Ants []*Ant

@@ -132,7 +132,7 @@ func getHandle(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query()["id"][0]
 	part := r.URL.Query()["part"][0]
 
-	// @todo give pipes different names like alpha and other
+	// todo give pipes different names like alpha and other
 	match, ok := matches[id]
 	if !ok {
 		notFound(w)
