@@ -153,7 +153,7 @@ func (g *Match) attackStep(fields map[pkg.Pos]global.Ants) {
 		for _, ant := range ants {
 			power := g.area.CalcAtkPower(target.Ant, ant)
 			switch {
-			case power <= 0 || power < bestPower:
+			case power < bestPower:
 				continue
 			case power == bestPower:
 				killers = append(killers, ant.User)
