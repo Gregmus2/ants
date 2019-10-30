@@ -33,20 +33,20 @@ func (mb *MatchBuilder) BuildAnts() {
 	}
 
 	// [players][position, birthQ position]
-	var positions [][2][2]uint
-	quartSize := uint(math.Round(float64(mb.areaSize / 4)))
-	halfSize := uint(math.Round(float64(mb.areaSize / 2)))
+	var positions [][2]pkg.Pos
+	quartSize := int(math.Round(float64(mb.areaSize / 4)))
+	halfSize := int(math.Round(float64(mb.areaSize / 2)))
 
 	switch len(mb.players) {
 	case 2:
-		positions = [][2][2]uint{
-			{{quartSize, halfSize}, {quartSize + 1, halfSize}},
-			{{uint(mb.areaSize) - quartSize, halfSize}, {uint(mb.areaSize) - quartSize - 1, halfSize}},
+		positions = [][2]pkg.Pos{
+			{pkg.Pos{quartSize, halfSize}, pkg.Pos{quartSize + 1, halfSize}},
+			{pkg.Pos{mb.areaSize - quartSize, halfSize}, pkg.Pos{mb.areaSize - quartSize - 1, halfSize}},
 		}
 	case 4:
-		octoSize := uint(math.Round(float64(mb.areaSize / 8)))
-		lastOctoPiece := uint(mb.areaSize) - octoSize
-		positions = [][2][2]uint{
+		octoSize := int(math.Round(float64(mb.areaSize / 8)))
+		lastOctoPiece := mb.areaSize - octoSize
+		positions = [][2]pkg.Pos{
 			{{octoSize, octoSize}, {octoSize + 1, octoSize + 1}},
 			{{lastOctoPiece, octoSize}, {lastOctoPiece - 1, octoSize + 1}},
 			{{octoSize, lastOctoPiece}, {octoSize + 1, lastOctoPiece - 1}},
@@ -58,7 +58,7 @@ func (mb *MatchBuilder) BuildAnts() {
 
 	mb.anthills = make(global.Anthills)
 	for i := 0; i < len(mb.players); i++ {
-		mb.area[positions[i][0][0]][positions[i][0][1]] = global.CreateAnthill(mb.players[i])
+		mb.area[positions[i][0].X()][positions[i][0].Y()] = global.CreateAnthill(mb.players[i])
 		mb.anthills.Add(mb.players[i], positions[i][0], &global.Anthill{
 			Pos:      positions[i][0],
 			User:     mb.players[i],

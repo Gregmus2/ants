@@ -18,9 +18,9 @@ func (g greg2) Start(anthill pkg.Pos, birth pkg.Pos) {
 
 }
 
-func (g greg2) Do(fields [9]pkg.FieldType, round int) (field uint8, action pkg.Action) {
-	field = uint8(r2.Intn(9))
-	action = pkg.ResolveAction(fields[field])
+func (g greg2) Do(fields [5][5]pkg.FieldType, round int) (target pkg.Pos, action pkg.Action) {
+	target = pkg.Pos{r2.Intn(5), r2.Intn(5)}
+	action = pkg.ResolveAction(fields[target.X()][target.Y()])
 
 	return
 }

@@ -18,18 +18,18 @@ func (a Area) ToColorSlice() [][]string {
 	return colorSlice
 }
 
-func (a Area) NearestArea(ant *Ant) [9]pkg.FieldType {
-	/*  It's fields near ant in that order:
-			0 1 2
-			3 4 5
-	 		6 7 8
-	*/
-	fieldTypes := [9]pkg.FieldType{}
-	i := 0
-	for y := ant.Pos.Y() - 1; y <= ant.Pos.Y()+1; y++ {
-		for x := ant.Pos.X() - 1; x <= ant.Pos.X()+1; x++ {
-			fieldTypes[i] = a[x][y].FieldTypeForUser(ant)
-			i++
+func (a Area) VisibleArea(ant *Ant) [5][5]pkg.FieldType {
+	fieldTypes := [5][5]pkg.FieldType{}
+	for dY := 0; dY < 5; dY++ {
+		for dX := 0; dX < 5; dX++ {
+			x := ant.Pos.X() - dX - 2
+			y := ant.Pos.Y() - dY - 2
+			if x < 0 || y < 0 {
+				fieldTypes[dX][dY] = pkg.NoField
+				continue
+			}
+
+			fieldTypes[dX][dY] = a[x][y].FieldTypeForUser(ant)
 		}
 	}
 

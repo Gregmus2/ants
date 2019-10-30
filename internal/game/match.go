@@ -97,9 +97,13 @@ func (g *Match) collectActions() map[pkg.Action]map[pkg.Pos]global.Ants {
 			continue
 		}
 
-		fieldTypes := g.area.NearestArea(ant)
-		field, action := ant.User.Algorithm().Do(fieldTypes, g.round*g.part)
-		pos := ant.Pos.RelativePosition(field)
+		fieldTypes := g.area.VisibleArea(ant)
+		pos, action := ant.User.Algorithm().Do(fieldTypes, g.round*g.part)
+		pos.Add(ant.Pos)
+		if pos.X() < 0 || pos.Y() < 0 {
+			continue
+		}
+
 		if _, ok := actions[action]; !ok {
 			actions[action] = make(map[pkg.Pos]global.Ants)
 		}
