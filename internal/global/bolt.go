@@ -39,6 +39,10 @@ func (b *Bolt) GetKeys(collection string) ([]string, error) {
 	var data []string
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(collection))
+		if bucket == nil {
+			return nil
+		}
+
 		err := bucket.ForEach(func(k []byte, v []byte) error {
 			data = append(data, string(k))
 

@@ -21,7 +21,7 @@ type Match struct {
 	name     string
 	players  []*global.User
 	ants     []*global.Ant
-	anthills map[*global.User][]global.Anthill
+	anthills global.Anthills
 	area     global.Area
 	birthQ   []*global.User
 	stat     *MatchStat
@@ -112,7 +112,7 @@ func (g *Match) collectActions() map[pkg.Action]map[pkg.Pos]global.Ants {
 
 func (g *Match) start() {
 	for _, ant := range g.ants {
-		anthill := g.anthills[ant.User][0]
+		anthill := g.anthills.FirstByUser(ant.User)
 		ant.User.Algorithm().Start(anthill.Pos, anthill.BirthPos)
 	}
 }
@@ -136,40 +136,67 @@ func (g *Match) play(actions map[pkg.Action]map[pkg.Pos]global.Ants) {
 	}
 }
 
+// htodo capture anthill
 func (g *Match) attackStep(fields map[pkg.Pos]global.Ants) {
 	for targetPos, ants := range fields {
 		target := g.area.ByPos(targetPos)
-		if target.Type != pkg.AntField {
-			continue
+		switch target.Type {
+		case pkg.AntField:
+			g.handleAttackAnt(targetPos, target.Ant, ants)
+		case pkg.AnthillField:
+			g.handleAttackAnthill(targetPos, ants)
 		}
-
-		if target.Ant.IsDead {
-			// todo remove after tests
-			panic("BUG: attempt to attack ant, which has already dead")
-		}
-
-		killers := make([]*global.User, 0, 1)
-		bestPower := 0
-		for _, ant := range ants {
-			power := g.area.CalcAtkPower(target.Ant, ant)
-			switch {
-			case power < bestPower:
-				continue
-			case power == bestPower:
-				killers = append(killers, ant.User)
-			default:
-				killers = []*global.User{ant.User}
-			}
-		}
-
-		if len(killers) <= 0 {
-			continue
-		}
-
-		target.Ant.IsDead = true
-		g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
-		g.stat.Kill(killers, target.Ant.User)
 	}
+}
+
+func (g *Match) handleAttackAnt(targetPos pkg.Pos, victim *global.Ant, ants global.Ants) {
+	if victim.IsDead {
+		// todo remove after tests
+		panic("BUG: attempt to attack ant, which has already dead")
+	}
+
+	killers := make([]*global.User, 0, 1)
+	bestPower := 0
+	for _, ant := range ants {
+		power := g.area.CalcAtkPower(victim, ant)
+		switch {
+		case power < bestPower:
+			continue
+		case power == bestPower:
+			killers = append(killers, ant.User)
+		default:
+			killers = []*global.User{ant.User}
+		}
+	}
+
+	if len(killers) <= 0 {
+		return
+	}
+
+	victim.IsDead = true
+	// todo ant would be part of atkPower of another ant in that round
+	g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
+	g.stat.Kill(killers, victim.User)
+}
+
+func (g *Match) handleAttackAnthill(targetPos pkg.Pos, ants global.Ants) {
+	users := make(map[*global.User]bool)
+	invaders := 0
+	for _, ant := range ants {
+		if _, exist := users[ant.User]; !exist {
+			users[ant.User] = true
+			invaders++
+		}
+	}
+
+	if invaders > 1 {
+		return
+	}
+
+	g.area[targetPos.X()][targetPos.Y()] = global.CreateAnthill(ants[0].User)
+	anthill := g.anthills.DeleteByPos(targetPos)
+	anthill.User = ants[0].User
+	g.anthills.Add(ants[0].User, targetPos, anthill)
 }
 
 func (g *Match) suicideStep(fields map[pkg.Pos]global.Ants) {
@@ -269,7 +296,7 @@ func (g *Match) LoadRound(name string, part string) [][][]string {
 }
 
 func (g *Match) giveBirth(user *global.User) bool {
-	for _, anthill := range g.anthills[user] {
+	for _, anthill := range g.anthills.ByUser(user) {
 		if g.area[anthill.BirthPos.X()][anthill.BirthPos.Y()].Type != pkg.EmptyField {
 			continue
 		}

@@ -16,7 +16,7 @@ type MatchBuilder struct {
 	ants     []*global.Ant
 	players  []*global.User
 	area     global.Area
-	anthills map[*global.User][]global.Anthill
+	anthills global.Anthills
 }
 
 func NewMatchBuilder(name string, areaSize int, players []*global.User) (*MatchBuilder, error) {
@@ -56,10 +56,10 @@ func (mb *MatchBuilder) BuildAnts() {
 		log.Fatal("wrong number of players")
 	}
 
-	mb.anthills = make(map[*global.User][]global.Anthill)
+	mb.anthills = make(global.Anthills)
 	for i := 0; i < len(mb.players); i++ {
 		mb.area[positions[i][0][0]][positions[i][0][1]] = global.CreateAnthill(mb.players[i])
-		mb.anthills[mb.players[i]] = append(mb.anthills[mb.players[i]], global.Anthill{
+		mb.anthills.Add(mb.players[i], positions[i][0], &global.Anthill{
 			Pos:      positions[i][0],
 			User:     mb.players[i],
 			BirthPos: positions[i][1],
@@ -67,14 +67,16 @@ func (mb *MatchBuilder) BuildAnts() {
 	}
 
 	mb.ants = make([]*global.Ant, 0, len(mb.players))
-	for _, anthill := range mb.anthills {
-		ant := &global.Ant{
-			Pos:    anthill[0].BirthPos,
-			User:   anthill[0].User,
-			IsDead: false,
+	for _, anthills := range mb.anthills {
+		for _, anthill := range anthills {
+			ant := &global.Ant{
+				Pos:    anthill.BirthPos,
+				User:   anthill.User,
+				IsDead: false,
+			}
+			mb.ants = append(mb.ants, ant)
+			mb.area[anthill.BirthPos.X()][anthill.BirthPos.Y()] = global.CreateAnt(ant)
 		}
-		mb.ants = append(mb.ants, ant)
-		mb.area[anthill[0].BirthPos.X()][anthill[0].BirthPos.Y()] = global.CreateAnt(ant)
 	}
 }
 
@@ -128,6 +130,7 @@ func (mb *MatchBuilder) BuildMatch(s global.Storage) *Match {
 	return CreateMatch(mb, s)
 }
 
+// htodo symmetrically distribution
 func (mb *MatchBuilder) foodUniformDistribution(foodCount int) {
 	var xPartSize int
 	var yPartSize int
