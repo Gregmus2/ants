@@ -99,6 +99,10 @@ func (g *Match) collectActions() map[pkg.Action]map[pkg.Pos]global.Ants {
 
 		fieldTypes := g.area.VisibleArea(ant)
 		pos, action := ant.User.Algorithm().Do(fieldTypes, g.round*g.part)
+		if ant.Pos.X() < -1 || ant.Pos.X() > 1 || ant.Pos.Y() < -1 || ant.Pos.Y() > 1 {
+			continue
+		}
+
 		pos.Add(ant.Pos)
 		if pos.X() < 0 || pos.Y() < 0 {
 			continue
