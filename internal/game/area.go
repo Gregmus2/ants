@@ -1,4 +1,4 @@
-package global
+package game
 
 import (
 	pkg "github.com/gregmus2/ants-pkg"

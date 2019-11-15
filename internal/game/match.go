@@ -1,7 +1,7 @@
 package game
 
 import (
-	"ants/internal/global"
+	"ants/internal/user"
 	"bytes"
 	"encoding/gob"
 	"log"
@@ -12,20 +12,20 @@ import (
 )
 
 type MatchStat struct {
-	ants   map[*global.User]uint
-	dead   map[*global.User]uint
-	killed map[*global.User]float64
+	ants   map[*user.User]uint
+	dead   map[*user.User]uint
+	killed map[*user.User]float64
 }
 
 type Match struct {
 	name     string
-	players  []*global.User
-	ants     []*global.Ant
-	anthills global.Anthills
-	area     global.Area
-	birthQ   []*global.User
+	players  []*user.User
+	ants     []*Ant
+	anthills Anthills
+	area     Area
+	birthQ   []*user.User
 	stat     *MatchStat
-	s        global.Storage
+	service  *Service
 	round    int
 	part     int
 	states   [][][]string
@@ -33,32 +33,36 @@ type Match struct {
 
 const matchesCollection string = "matches"
 
-func CreateMatch(mb *MatchBuilder, s global.Storage) *Match {
+func CreateMatch(gameService *Service, state *matchState, name string) *Match {
+	if state.players == nil || state.ants == nil {
+		log.Fatal("builder must have at least players and ants")
+	}
+
 	match := &Match{
-		name:     mb.name,
-		players:  mb.players,
-		ants:     mb.ants,
-		area:     mb.area,
-		anthills: mb.anthills,
-		birthQ:   make([]*global.User, 0, 10),
-		s:        s,
+		name:     name,
+		players:  state.players,
+		ants:     state.ants,
+		area:     state.area,
+		anthills: state.anthills,
+		birthQ:   make([]*user.User, 0, 10),
+		service:  gameService,
 		stat: &MatchStat{
-			ants:   make(map[*global.User]uint),
-			dead:   make(map[*global.User]uint),
-			killed: make(map[*global.User]float64),
+			ants:   make(map[*user.User]uint),
+			dead:   make(map[*user.User]uint),
+			killed: make(map[*user.User]float64),
 		},
 		round:  1,
 		part:   1,
-		states: make([][][]string, 0, global.Config.Match.PartSize),
+		states: make([][][]string, 0, gameService.config.Match.PartSize),
 	}
 
-	for _, player := range mb.players {
+	for _, player := range state.players {
 		match.stat.ants[player] = 1
 		match.stat.dead[player] = 0
 		match.stat.killed[player] = 0
 	}
 
-	s.CreateCollectionIfNotExist(matchesCollection)
+	gameService.storage.CreateCollectionIfNotExist(matchesCollection)
 
 	return match
 }
@@ -75,22 +79,22 @@ func (g *Match) Run() {
 }
 
 func (g *Match) isOver() bool {
-	return g.stat.CountLiving() > 1 && g.part < global.Config.Match.PartsLimit
+	return g.stat.CountLiving() > 1 && g.part < g.service.config.Match.PartsLimit
 }
 
 func (g *Match) switchRound() {
 	g.states = append(g.states, g.area.ToColorSlice())
-	matchPartSizeFloat := float64(global.Config.Match.PartSize)
+	matchPartSizeFloat := float64(g.service.config.Match.PartSize)
 	if math.Mod(float64(g.round), matchPartSizeFloat) == 0 {
 		g.savePart()
-		g.states = make([][][]string, 0, global.Config.Match.PartSize)
+		g.states = make([][][]string, 0, g.service.config.Match.PartSize)
 		g.part++
 	}
 	g.round++
 }
 
-func (g *Match) collectActions() map[pkg.Action]map[pkg.Pos]global.Ants {
-	actions := make(map[pkg.Action]map[pkg.Pos]global.Ants)
+func (g *Match) collectActions() map[pkg.Action]map[pkg.Pos]Ants {
+	actions := make(map[pkg.Action]map[pkg.Pos]Ants)
 	for _, ant := range g.ants {
 		// todo can I remove dead ants from g.ants?
 		if ant.IsDead {
@@ -109,7 +113,7 @@ func (g *Match) collectActions() map[pkg.Action]map[pkg.Pos]global.Ants {
 		}
 
 		if _, ok := actions[action]; !ok {
-			actions[action] = make(map[pkg.Pos]global.Ants)
+			actions[action] = make(map[pkg.Pos]Ants)
 		}
 
 		actions[action][pos] = append(actions[action][pos], ant)
@@ -126,7 +130,7 @@ func (g *Match) start() {
 }
 
 // todo write this logic to instruction
-func (g *Match) play(actions map[pkg.Action]map[pkg.Pos]global.Ants) {
+func (g *Match) play(actions map[pkg.Action]map[pkg.Pos]Ants) {
 	if fields, ok := actions[pkg.AttackAction]; ok {
 		g.attackStep(fields)
 	}
@@ -145,7 +149,7 @@ func (g *Match) play(actions map[pkg.Action]map[pkg.Pos]global.Ants) {
 }
 
 // htodo capture anthill
-func (g *Match) attackStep(fields map[pkg.Pos]global.Ants) {
+func (g *Match) attackStep(fields map[pkg.Pos]Ants) {
 	for targetPos, ants := range fields {
 		target := g.area.ByPos(targetPos)
 		switch target.Type {
@@ -157,13 +161,13 @@ func (g *Match) attackStep(fields map[pkg.Pos]global.Ants) {
 	}
 }
 
-func (g *Match) handleAttackAnt(targetPos pkg.Pos, victim *global.Ant, ants global.Ants) {
+func (g *Match) handleAttackAnt(targetPos pkg.Pos, victim *Ant, ants Ants) {
 	if victim.IsDead {
 		// todo remove after tests
 		panic("BUG: attempt to attack ant, which has already dead")
 	}
 
-	killers := make([]*global.User, 0, 1)
+	killers := make([]*user.User, 0, 1)
 	bestPower := 0
 	for _, ant := range ants {
 		power := g.area.CalcAtkPower(victim, ant)
@@ -173,7 +177,7 @@ func (g *Match) handleAttackAnt(targetPos pkg.Pos, victim *global.Ant, ants glob
 		case power == bestPower:
 			killers = append(killers, ant.User)
 		default:
-			killers = []*global.User{ant.User}
+			killers = []*user.User{ant.User}
 		}
 	}
 
@@ -183,12 +187,12 @@ func (g *Match) handleAttackAnt(targetPos pkg.Pos, victim *global.Ant, ants glob
 
 	victim.IsDead = true
 	// todo ant would be part of atkPower of another ant in that round
-	g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
+	g.area[targetPos.X()][targetPos.Y()] = CreateEmptyObject()
 	g.stat.Kill(killers, victim.User)
 }
 
-func (g *Match) handleAttackAnthill(targetPos pkg.Pos, ants global.Ants) {
-	users := make(map[*global.User]bool)
+func (g *Match) handleAttackAnthill(targetPos pkg.Pos, ants Ants) {
+	users := make(map[*user.User]bool)
 	invaders := 0
 	for _, ant := range ants {
 		if _, exist := users[ant.User]; !exist {
@@ -201,13 +205,13 @@ func (g *Match) handleAttackAnthill(targetPos pkg.Pos, ants global.Ants) {
 		return
 	}
 
-	g.area[targetPos.X()][targetPos.Y()] = global.CreateAnthill(ants[0].User)
+	g.area[targetPos.X()][targetPos.Y()] = CreateAnthill(ants[0].User)
 	anthill := g.anthills.DeleteByPos(targetPos)
 	anthill.User = ants[0].User
 	g.anthills.Add(ants[0].User, targetPos, anthill)
 }
 
-func (g *Match) suicideStep(fields map[pkg.Pos]global.Ants) {
+func (g *Match) suicideStep(fields map[pkg.Pos]Ants) {
 	for _, ants := range fields {
 		for _, ant := range ants {
 			if ant.IsDead {
@@ -215,13 +219,13 @@ func (g *Match) suicideStep(fields map[pkg.Pos]global.Ants) {
 			}
 
 			ant.IsDead = true
-			g.area[ant.Pos.X()][ant.Pos.Y()] = global.CreateEmptyObject()
+			g.area[ant.Pos.X()][ant.Pos.Y()] = CreateEmptyObject()
 			g.stat.Die(ant.User)
 		}
 	}
 }
 
-func (g *Match) eatStep(fields map[pkg.Pos]global.Ants) {
+func (g *Match) eatStep(fields map[pkg.Pos]Ants) {
 	for targetPos, ants := range fields {
 		target := g.area.ByPos(targetPos)
 		if target.Type != pkg.FoodField {
@@ -234,11 +238,11 @@ func (g *Match) eatStep(fields map[pkg.Pos]global.Ants) {
 
 		ant := ants[0]
 		g.birthQ = append(g.birthQ, ant.User)
-		g.area[targetPos.X()][targetPos.Y()] = global.CreateEmptyObject()
+		g.area[targetPos.X()][targetPos.Y()] = CreateEmptyObject()
 	}
 }
 
-func (g *Match) moveStep(fields map[pkg.Pos]global.Ants) {
+func (g *Match) moveStep(fields map[pkg.Pos]Ants) {
 	for targetPos, ants := range fields {
 		target := g.area.ByPos(targetPos)
 		if target.Type != pkg.EmptyField {
@@ -252,13 +256,13 @@ func (g *Match) moveStep(fields map[pkg.Pos]global.Ants) {
 		// fixme in that case ant can move to field, where another ant was in that round
 		ant := ants[0]
 		g.area[targetPos.X()][targetPos.Y()] = g.area[ant.Pos.X()][ant.Pos.Y()]
-		g.area[ant.Pos.X()][ant.Pos.Y()] = global.CreateEmptyObject()
+		g.area[ant.Pos.X()][ant.Pos.Y()] = CreateEmptyObject()
 		ant.Pos = targetPos
 	}
 }
 
 func (g *Match) birthStep() {
-	latecomers := make([]*global.User, 0, 10)
+	latecomers := make([]*user.User, 0, 10)
 	for _, user := range g.birthQ {
 		ok := g.giveBirth(user)
 		if !ok {
@@ -276,16 +280,17 @@ func (g *Match) savePart() {
 		log.Fatal(err)
 	}
 
-	err = g.s.Put(matchesCollection, g.name+strconv.Itoa(g.part), buf.Bytes())
+	// todo delegate on service
+	err = g.service.storage.Put(matchesCollection, g.name+strconv.Itoa(g.part), buf.Bytes())
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
 func (g *Match) LoadRound(name string, part string) [][][]string {
-	result := make([][][]string, 0, global.Config.Match.PartSize)
+	result := make([][][]string, 0, g.service.config.Match.PartSize)
 	buf := &bytes.Buffer{}
-	rawData, err := g.s.Get(matchesCollection, name+part)
+	rawData, err := g.service.storage.Get(matchesCollection, name+part)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -303,18 +308,18 @@ func (g *Match) LoadRound(name string, part string) [][][]string {
 	return result
 }
 
-func (g *Match) giveBirth(user *global.User) bool {
+func (g *Match) giveBirth(user *user.User) bool {
 	for _, anthill := range g.anthills.ByUser(user) {
 		if g.area[anthill.BirthPos.X()][anthill.BirthPos.Y()].Type != pkg.EmptyField {
 			continue
 		}
 
-		baby := &global.Ant{
+		baby := &Ant{
 			Pos:    anthill.BirthPos,
 			User:   user,
 			IsDead: false,
 		}
-		g.area[anthill.BirthPos.X()][anthill.BirthPos.Y()] = global.CreateAnt(baby)
+		g.area[anthill.BirthPos.X()][anthill.BirthPos.Y()] = CreateAnt(baby)
 		g.ants = append(g.ants, baby)
 		g.stat.ants[user]++
 
@@ -324,7 +329,7 @@ func (g *Match) giveBirth(user *global.User) bool {
 	return false
 }
 
-func (s *MatchStat) Kill(killers []*global.User, victim *global.User) {
+func (s *MatchStat) Kill(killers []*user.User, victim *user.User) {
 	s.Die(victim)
 
 	piece := math.Round(float64(1/len(killers)*100)) / 100
@@ -333,7 +338,7 @@ func (s *MatchStat) Kill(killers []*global.User, victim *global.User) {
 	}
 }
 
-func (s *MatchStat) Die(who *global.User) {
+func (s *MatchStat) Die(who *user.User) {
 	s.ants[who]--
 	s.dead[who]++
 }

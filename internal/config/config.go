@@ -1,4 +1,4 @@
-package global
+package config
 
 import (
 	"log"
@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var Config struct {
+type Config struct {
 	AreaSize int `yaml:"area_size"`
 	Match    struct {
 		PartsLimit int `yaml:"parts_limit"`
@@ -16,11 +16,12 @@ var Config struct {
 	BasePath string `yaml:"base_path"`
 }
 
-func InitConfig() {
-	Config.AreaSize = 100
-	Config.Match.PartsLimit = 200
-	Config.Match.PartSize = 100
-	Config.BasePath = os.ExpandEnv("$GOPATH/src/ants")
+func NewConfig() *Config {
+	config := new(Config)
+	config.AreaSize = 100
+	config.Match.PartsLimit = 200
+	config.Match.PartSize = 100
+	config.BasePath = os.ExpandEnv("$GOPATH/src/ants")
 
 	f, err := os.Open("config.yml")
 	if err != nil {
@@ -28,8 +29,10 @@ func InitConfig() {
 	}
 
 	d := yaml.NewDecoder(f)
-	err = d.Decode(&Config)
+	err = d.Decode(&config)
 	if err != nil {
 		log.Fatalf("Fatal error config file: %s \n", err)
 	}
+
+	return config
 }

@@ -1,6 +1,10 @@
-package global
+package game
 
-import pkg "github.com/gregmus2/ants-pkg"
+import (
+	"ants/internal/user"
+
+	pkg "github.com/gregmus2/ants-pkg"
+)
 
 type Object struct {
 	Type  pkg.FieldType
@@ -41,7 +45,7 @@ func CreateFood() *Object {
 }
 
 // todo color of anthill must be
-func CreateAnthill(u *User) *Object {
+func CreateAnthill(u *user.User) *Object {
 	return &Object{
 		Type:  pkg.AnthillField,
 		Color: u.Color,
