@@ -7,26 +7,26 @@ import (
 )
 
 type Ant struct {
-	Pos    pkg.Pos
+	Pos    *pkg.Pos
 	User   *user.User
 	IsDead bool
 }
 
-type Anthills map[*user.User]map[pkg.Pos]*Anthill
+type Anthills map[*user.User]map[*pkg.Pos]*Anthill
 
 type Anthill struct {
-	Pos      pkg.Pos
+	Pos      *pkg.Pos
 	User     *user.User
-	BirthPos pkg.Pos
+	BirthPos *pkg.Pos
 }
 
 type Ants []*Ant
 
-func (ah Anthills) ByUser(user *user.User) map[pkg.Pos]*Anthill {
+func (ah Anthills) ByUser(user *user.User) map[*pkg.Pos]*Anthill {
 	return ah[user]
 }
 
-func (ah Anthills) ByPos(pos pkg.Pos) *Anthill {
+func (ah Anthills) ByPos(pos *pkg.Pos) *Anthill {
 	for _, anthills := range ah {
 		if _, exist := anthills[pos]; exist {
 			return anthills[pos]
@@ -44,7 +44,7 @@ func (ah Anthills) FirstByUser(user *user.User) *Anthill {
 	return nil
 }
 
-func (ah Anthills) DeleteByPos(pos pkg.Pos) *Anthill {
+func (ah Anthills) DeleteByPos(pos *pkg.Pos) *Anthill {
 	var obj *Anthill
 	for i, anthills := range ah {
 		if _, exist := anthills[pos]; exist {
@@ -58,9 +58,9 @@ func (ah Anthills) DeleteByPos(pos pkg.Pos) *Anthill {
 	return nil
 }
 
-func (ah Anthills) Add(user *user.User, pos pkg.Pos, anthill *Anthill) {
+func (ah Anthills) Add(user *user.User, pos *pkg.Pos, anthill *Anthill) {
 	if _, ok := ah[user]; !ok {
-		ah[user] = make(map[pkg.Pos]*Anthill)
+		ah[user] = make(map[*pkg.Pos]*Anthill)
 	}
 
 	ah[user][pos] = anthill

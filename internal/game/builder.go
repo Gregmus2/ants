@@ -32,20 +32,20 @@ func buildAnts(state *matchState) {
 	}
 
 	// [players][position, birthQ position]
-	var positions [][2]pkg.Pos
+	var positions [][2]*pkg.Pos
 	quartSize := int(math.Round(float64(state.areaSize / 4)))
 	halfSize := int(math.Round(float64(state.areaSize / 2)))
 
 	switch len(state.players) {
 	case 2:
-		positions = [][2]pkg.Pos{
-			{pkg.Pos{quartSize, halfSize}, pkg.Pos{quartSize + 1, halfSize}},
-			{pkg.Pos{state.areaSize - quartSize, halfSize}, pkg.Pos{state.areaSize - quartSize - 1, halfSize}},
+		positions = [][2]*pkg.Pos{
+			{&pkg.Pos{quartSize, halfSize}, &pkg.Pos{quartSize + 1, halfSize}},
+			{&pkg.Pos{state.areaSize - quartSize, halfSize}, &pkg.Pos{state.areaSize - quartSize - 1, halfSize}},
 		}
 	case 4:
 		octoSize := int(math.Round(float64(state.areaSize / 8)))
 		lastOctoPiece := state.areaSize - octoSize
-		positions = [][2]pkg.Pos{
+		positions = [][2]*pkg.Pos{
 			{{octoSize, octoSize}, {octoSize + 1, octoSize + 1}},
 			{{lastOctoPiece, octoSize}, {lastOctoPiece - 1, octoSize + 1}},
 			{{octoSize, lastOctoPiece}, {octoSize + 1, lastOctoPiece - 1}},
@@ -57,7 +57,7 @@ func buildAnts(state *matchState) {
 
 	state.anthills = make(Anthills)
 	for i := 0; i < len(state.players); i++ {
-		state.area[positions[i][0].X()][positions[i][0].Y()] = CreateAnthill(state.players[i])
+		state.area[positions[i][0].X][positions[i][0].Y] = CreateAnthill(state.players[i])
 		state.anthills.Add(state.players[i], positions[i][0], &Anthill{
 			Pos:      positions[i][0],
 			User:     state.players[i],
@@ -73,8 +73,9 @@ func buildAnts(state *matchState) {
 				User:   anthill.User,
 				IsDead: false,
 			}
+
 			state.ants = append(state.ants, ant)
-			state.area[anthill.BirthPos.X()][anthill.BirthPos.Y()] = CreateAnt(ant)
+			state.area[anthill.BirthPos.X][anthill.BirthPos.Y] = CreateAnt(ant)
 		}
 	}
 }

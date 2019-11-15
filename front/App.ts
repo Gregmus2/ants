@@ -166,21 +166,23 @@ export class App{
             .then(body => {
                 App.playersContainer.innerHTML = '';
 
-                for (let name of body) {
-                    let div = document.createElement("div");
-                    div.className = 'uk-margin uk-grid-small uk-child-width-auto uk-grid';
-                    let label = document.createElement("label");
-                    let span = document.createElement("span");
-                    span.innerText = name;
-                    span.className = 'uk-margin-small-left';
-                    let input = document.createElement("input");
-                    input.className = 'uk-checkbox';
-                    input.type = 'checkbox';
+                if (body) {
+                    for (let name of body) {
+                        let div = document.createElement("div");
+                        div.className = 'uk-margin uk-grid-small uk-child-width-auto uk-grid';
+                        let label = document.createElement("label");
+                        let span = document.createElement("span");
+                        span.innerText = name;
+                        span.className = 'uk-margin-small-left';
+                        let input = document.createElement("input");
+                        input.className = 'uk-checkbox';
+                        input.type = 'checkbox';
 
-                    div.appendChild(label);
-                    label.appendChild(input);
-                    label.appendChild(span);
-                    App.playersContainer.appendChild(div)
+                        div.appendChild(label);
+                        label.appendChild(input);
+                        label.appendChild(span);
+                        App.playersContainer.appendChild(div)
+                    }
                 }
             })
     }

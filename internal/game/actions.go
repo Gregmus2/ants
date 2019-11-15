@@ -17,7 +17,7 @@ func (s *Service) MatchNamesAction(r *http.Request) (interface{}, int) {
 func (s *Service) StartAction(r *http.Request) (interface{}, int) {
 	err := r.ParseForm()
 	if err != nil {
-		return err, http.StatusBadRequest
+		return err.Error(), http.StatusBadRequest
 	}
 
 	namesString := r.PostFormValue("names")
@@ -28,7 +28,7 @@ func (s *Service) StartAction(r *http.Request) (interface{}, int) {
 	n := strings.Split(namesString, ",")
 	id, err := s.RunGame(n)
 	if err != nil {
-		return err, http.StatusBadRequest
+		return err.Error(), http.StatusBadRequest
 	}
 
 	return id, http.StatusOK

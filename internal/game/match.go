@@ -93,8 +93,8 @@ func (g *Match) switchRound() {
 	g.round++
 }
 
-func (g *Match) collectActions() map[pkg.Action]map[pkg.Pos]Ants {
-	actions := make(map[pkg.Action]map[pkg.Pos]Ants)
+func (g *Match) collectActions() map[pkg.Action]map[*pkg.Pos]Ants {
+	actions := make(map[pkg.Action]map[*pkg.Pos]Ants)
 	for _, ant := range g.ants {
 		// todo can I remove dead ants from g.ants?
 		if ant.IsDead {
@@ -103,17 +103,17 @@ func (g *Match) collectActions() map[pkg.Action]map[pkg.Pos]Ants {
 
 		fieldTypes := g.area.VisibleArea(ant)
 		pos, action := ant.User.Algorithm().Do(fieldTypes, g.round*g.part)
-		if ant.Pos.X() < -1 || ant.Pos.X() > 1 || ant.Pos.Y() < -1 || ant.Pos.Y() > 1 {
+		if pos.X < -1 || pos.X > 1 || pos.Y < -1 || pos.Y > 1 {
 			continue
 		}
 
 		pos.Add(ant.Pos)
-		if pos.X() < 0 || pos.Y() < 0 {
+		if pos.X < 0 || pos.Y < 0 {
 			continue
 		}
 
 		if _, ok := actions[action]; !ok {
-			actions[action] = make(map[pkg.Pos]Ants)
+			actions[action] = make(map[*pkg.Pos]Ants)
 		}
 
 		actions[action][pos] = append(actions[action][pos], ant)
@@ -125,12 +125,12 @@ func (g *Match) collectActions() map[pkg.Action]map[pkg.Pos]Ants {
 func (g *Match) start() {
 	for _, ant := range g.ants {
 		anthill := g.anthills.FirstByUser(ant.User)
-		ant.User.Algorithm().Start(anthill.Pos, anthill.BirthPos)
+		ant.User.Algorithm().Start(*anthill.Pos, *anthill.BirthPos)
 	}
 }
 
 // todo write this logic to instruction
-func (g *Match) play(actions map[pkg.Action]map[pkg.Pos]Ants) {
+func (g *Match) play(actions map[pkg.Action]map[*pkg.Pos]Ants) {
 	if fields, ok := actions[pkg.AttackAction]; ok {
 		g.attackStep(fields)
 	}
@@ -149,7 +149,7 @@ func (g *Match) play(actions map[pkg.Action]map[pkg.Pos]Ants) {
 }
 
 // htodo capture anthill
-func (g *Match) attackStep(fields map[pkg.Pos]Ants) {
+func (g *Match) attackStep(fields map[*pkg.Pos]Ants) {
 	for targetPos, ants := range fields {
 		target := g.area.ByPos(targetPos)
 		switch target.Type {
@@ -161,7 +161,7 @@ func (g *Match) attackStep(fields map[pkg.Pos]Ants) {
 	}
 }
 
-func (g *Match) handleAttackAnt(targetPos pkg.Pos, victim *Ant, ants Ants) {
+func (g *Match) handleAttackAnt(targetPos *pkg.Pos, victim *Ant, ants Ants) {
 	if victim.IsDead {
 		// todo remove after tests
 		panic("BUG: attempt to attack ant, which has already dead")
@@ -187,11 +187,11 @@ func (g *Match) handleAttackAnt(targetPos pkg.Pos, victim *Ant, ants Ants) {
 
 	victim.IsDead = true
 	// todo ant would be part of atkPower of another ant in that round
-	g.area[targetPos.X()][targetPos.Y()] = CreateEmptyObject()
+	g.area[targetPos.X][targetPos.Y] = CreateEmptyObject()
 	g.stat.Kill(killers, victim.User)
 }
 
-func (g *Match) handleAttackAnthill(targetPos pkg.Pos, ants Ants) {
+func (g *Match) handleAttackAnthill(targetPos *pkg.Pos, ants Ants) {
 	users := make(map[*user.User]bool)
 	invaders := 0
 	for _, ant := range ants {
@@ -205,13 +205,13 @@ func (g *Match) handleAttackAnthill(targetPos pkg.Pos, ants Ants) {
 		return
 	}
 
-	g.area[targetPos.X()][targetPos.Y()] = CreateAnthill(ants[0].User)
+	g.area[targetPos.X][targetPos.Y] = CreateAnthill(ants[0].User)
 	anthill := g.anthills.DeleteByPos(targetPos)
 	anthill.User = ants[0].User
 	g.anthills.Add(ants[0].User, targetPos, anthill)
 }
 
-func (g *Match) suicideStep(fields map[pkg.Pos]Ants) {
+func (g *Match) suicideStep(fields map[*pkg.Pos]Ants) {
 	for _, ants := range fields {
 		for _, ant := range ants {
 			if ant.IsDead {
@@ -219,13 +219,13 @@ func (g *Match) suicideStep(fields map[pkg.Pos]Ants) {
 			}
 
 			ant.IsDead = true
-			g.area[ant.Pos.X()][ant.Pos.Y()] = CreateEmptyObject()
+			g.area[ant.Pos.X][ant.Pos.Y] = CreateEmptyObject()
 			g.stat.Die(ant.User)
 		}
 	}
 }
 
-func (g *Match) eatStep(fields map[pkg.Pos]Ants) {
+func (g *Match) eatStep(fields map[*pkg.Pos]Ants) {
 	for targetPos, ants := range fields {
 		target := g.area.ByPos(targetPos)
 		if target.Type != pkg.FoodField {
@@ -238,11 +238,11 @@ func (g *Match) eatStep(fields map[pkg.Pos]Ants) {
 
 		ant := ants[0]
 		g.birthQ = append(g.birthQ, ant.User)
-		g.area[targetPos.X()][targetPos.Y()] = CreateEmptyObject()
+		g.area[targetPos.X][targetPos.Y] = CreateEmptyObject()
 	}
 }
 
-func (g *Match) moveStep(fields map[pkg.Pos]Ants) {
+func (g *Match) moveStep(fields map[*pkg.Pos]Ants) {
 	for targetPos, ants := range fields {
 		target := g.area.ByPos(targetPos)
 		if target.Type != pkg.EmptyField {
@@ -255,8 +255,8 @@ func (g *Match) moveStep(fields map[pkg.Pos]Ants) {
 
 		// fixme in that case ant can move to field, where another ant was in that round
 		ant := ants[0]
-		g.area[targetPos.X()][targetPos.Y()] = g.area[ant.Pos.X()][ant.Pos.Y()]
-		g.area[ant.Pos.X()][ant.Pos.Y()] = CreateEmptyObject()
+		g.area[targetPos.X][targetPos.Y] = g.area[ant.Pos.X][ant.Pos.Y]
+		g.area[ant.Pos.X][ant.Pos.Y] = CreateEmptyObject()
 		ant.Pos = targetPos
 	}
 }
@@ -310,7 +310,7 @@ func (g *Match) LoadRound(name string, part string) [][][]string {
 
 func (g *Match) giveBirth(user *user.User) bool {
 	for _, anthill := range g.anthills.ByUser(user) {
-		if g.area[anthill.BirthPos.X()][anthill.BirthPos.Y()].Type != pkg.EmptyField {
+		if g.area[anthill.BirthPos.X][anthill.BirthPos.Y].Type != pkg.EmptyField {
 			continue
 		}
 
@@ -319,7 +319,7 @@ func (g *Match) giveBirth(user *user.User) bool {
 			User:   user,
 			IsDead: false,
 		}
-		g.area[anthill.BirthPos.X()][anthill.BirthPos.Y()] = CreateAnt(baby)
+		g.area[anthill.BirthPos.X][anthill.BirthPos.Y] = CreateAnt(baby)
 		g.ants = append(g.ants, baby)
 		g.stat.ants[user]++
 
