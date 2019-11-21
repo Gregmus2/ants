@@ -28,7 +28,7 @@ func TestServe(t *testing.T) {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	cfg := config.NewConfig()
-	s := storage.NewBolt("ants")
+	s := storage.NewBolt("test")
 	userService := user.NewService(s, cfg)
 	gameService := game.NewService(s, cfg, userService)
 	infoService := config.NewService(s, cfg)
@@ -45,7 +45,7 @@ func TestServe(t *testing.T) {
 	time.Sleep(1000 * time.Millisecond)
 
 	pipes := make([]string, 0)
-	toJSON(t, get(t, basePath+"/api/pipes"), &pipes)
+	JSONDecode(t, get(t, basePath+"/api/pipes"), &pipes)
 	if len(pipes) != 0 {
 		t.Error("pipes must be empty by start")
 	}
@@ -59,12 +59,13 @@ func TestServe(t *testing.T) {
 	registerTestRequest(t, "Greg2", "green")
 
 	players := make([]string, 0)
-	toJSON(t, get(t, basePath+"/api/players"), &players)
+	JSONDecode(t, get(t, basePath+"/api/players"), &players)
 	if len(players) != 2 || players[0] != "Greg" || players[1] != "Greg2" {
 		t.Error("wrong players")
 	}
 
-	id := startTestRequest(t)
+	var id string
+	JSONDecode(t, startTestRequest(t), &id)
 	if id == "" {
 		t.Error("empty id from start request")
 	}
@@ -75,10 +76,10 @@ func TestServe(t *testing.T) {
 		t.Errorf("wrong batch size %d", len(area))
 	}
 
-	_ = os.Remove("ants.db")
+	_ = os.Remove("test.db")
 }
 
-func toJSON(t *testing.T, body []byte, data interface{}) {
+func JSONDecode(t *testing.T, body []byte, data interface{}) {
 	err := json.Unmarshal(body, data)
 	if err != nil {
 		t.Error(err, string(body))
@@ -142,7 +143,7 @@ func registerTestRequest(t *testing.T, name string, color string) {
 	}
 }
 
-func startTestRequest(t *testing.T) string {
+func startTestRequest(t *testing.T) []byte {
 	form := url.Values{}
 	form.Add("names", "Greg,Greg2")
 
@@ -163,7 +164,7 @@ func startTestRequest(t *testing.T) string {
 		t.Error(err)
 	}
 
-	return string(body)
+	return body
 }
 
 func getTestRequest(t *testing.T, id string) [][][]string {

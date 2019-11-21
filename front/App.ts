@@ -45,7 +45,7 @@ export class App{
         }
 
         requestAnimationFrame(App.loop);
-        // setTimeout(() => App.loop(), 500)
+        // setTimeout(() => App.loop(), 100)
     }
     
     static update() {

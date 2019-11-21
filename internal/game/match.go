@@ -148,7 +148,7 @@ func (g *Match) play(actions map[pkg.Action]map[*pkg.Pos]Ants) {
 	}
 }
 
-// htodo capture anthill
+// todo capture anthill
 func (g *Match) attackStep(fields map[*pkg.Pos]Ants) {
 	for targetPos, ants := range fields {
 		target := g.area.ByPos(targetPos)

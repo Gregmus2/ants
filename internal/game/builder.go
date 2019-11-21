@@ -39,17 +39,17 @@ func buildAnts(state *matchState) {
 	switch len(state.players) {
 	case 2:
 		positions = [][2]*pkg.Pos{
-			{&pkg.Pos{quartSize, halfSize}, &pkg.Pos{quartSize + 1, halfSize}},
-			{&pkg.Pos{state.areaSize - quartSize, halfSize}, &pkg.Pos{state.areaSize - quartSize - 1, halfSize}},
+			{&pkg.Pos{X: quartSize, Y: halfSize}, &pkg.Pos{X: quartSize + 1, Y: halfSize}},
+			{&pkg.Pos{X: state.areaSize - quartSize, Y: halfSize}, &pkg.Pos{X: state.areaSize - quartSize - 1, Y: halfSize}},
 		}
 	case 4:
 		octoSize := int(math.Round(float64(state.areaSize / 8)))
 		lastOctoPiece := state.areaSize - octoSize
 		positions = [][2]*pkg.Pos{
-			{{octoSize, octoSize}, {octoSize + 1, octoSize + 1}},
-			{{lastOctoPiece, octoSize}, {lastOctoPiece - 1, octoSize + 1}},
-			{{octoSize, lastOctoPiece}, {octoSize + 1, lastOctoPiece - 1}},
-			{{lastOctoPiece, lastOctoPiece}, {lastOctoPiece - 1, lastOctoPiece - 1}},
+			{{X: octoSize, Y: octoSize}, {X: octoSize + 1, Y: octoSize + 1}},
+			{{X: lastOctoPiece, Y: octoSize}, {X: lastOctoPiece - 1, Y: octoSize + 1}},
+			{{X: octoSize, Y: lastOctoPiece}, {X: octoSize + 1, Y: lastOctoPiece - 1}},
+			{{X: lastOctoPiece, Y: lastOctoPiece}, {X: lastOctoPiece - 1, Y: lastOctoPiece - 1}},
 		}
 	default:
 		log.Fatal("wrong number of players")
@@ -122,7 +122,7 @@ func buildFood(state *matchState, percentFrom float32, percentTo float32, min in
 	}
 }
 
-// htodo symmetrically distribution
+// todo symmetrically distribution
 func foodUniformDistribution(state *matchState, foodCount int) {
 	var xPartSize int
 	var yPartSize int
