@@ -331,6 +331,7 @@ func (g *Match) savePart() {
 	go g.service.storage.Put(matchesCollection, g.name+strconv.Itoa(g.part), buf.Bytes())
 }
 
+// todo load list of games from db on init
 func (g *Match) LoadRound(name string, part string) [][][]string {
 	result := make([][][]string, 0, g.service.config.Match.PartSize)
 	buf := &bytes.Buffer{}
