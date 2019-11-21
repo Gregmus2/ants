@@ -29,7 +29,7 @@ func (s *Service) RegistrationAction(r *http.Request) (interface{}, int) {
 	}
 	defer file.Close()
 
-	err = s.register(name, color, file)
+	err = s.Register(name, color, file)
 	if err != nil {
 		return err.Error(), http.StatusInternalServerError
 	}

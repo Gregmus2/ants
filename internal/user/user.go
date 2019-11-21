@@ -69,7 +69,7 @@ func (s *Service) LoadUser(name string) (*User, error) {
 	return user, nil
 }
 
-func (s *Service) register(name string, color string, algorithmFile io.Reader) error {
+func (s *Service) Register(name string, color string, algorithmFile io.Reader) error {
 	err := s.SaveCodeFile(algorithmFile, name)
 	if err != nil {
 		return err

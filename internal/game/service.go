@@ -31,14 +31,14 @@ func (s *Service) RunGame(names []string) (string, error) {
 	}
 
 	id := strconv.Itoa(rand.Intn(1000))
-	state, err := newMatchState(s.config.AreaSize, users)
+	state, err := NewMatchState(s.config.AreaSize, users)
 	if err != nil {
 		return "", err
 	}
 
-	buildArea(state)
-	buildAnts(state)
-	buildFood(state, 0.01, 0.03, len(names), true)
+	BuildArea(state)
+	BuildAnts(state)
+	BuildFood(state, 0.01, 0.03, len(names), true)
 
 	s.matches[id] = CreateMatch(s, state, id)
 	go s.matches[id].Run()

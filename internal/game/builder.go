@@ -10,7 +10,7 @@ import (
 	pkg "github.com/gregmus2/ants-pkg"
 )
 
-type matchState struct {
+type MatchState struct {
 	areaSize int
 	ants     []*Ant
 	players  []*user.User
@@ -18,15 +18,15 @@ type matchState struct {
 	anthills Anthills
 }
 
-func newMatchState(areaSize int, players []*user.User) (*matchState, error) {
+func NewMatchState(areaSize int, players []*user.User) (*MatchState, error) {
 	if len(players) != 2 && len(players) != 4 {
 		return nil, errors.New("wrong number of players")
 	}
 
-	return &matchState{areaSize: areaSize, players: players}, nil
+	return &MatchState{areaSize: areaSize, players: players}, nil
 }
 
-func buildAnts(state *matchState) {
+func BuildAnts(state *MatchState) {
 	if state.area == nil {
 		log.Fatal("builder must have area before build ants")
 	}
@@ -80,7 +80,7 @@ func buildAnts(state *matchState) {
 	}
 }
 
-func buildArea(state *matchState) {
+func BuildArea(state *MatchState) {
 	state.area = make([][]*Object, state.areaSize)
 	lastTile := state.areaSize - 1
 	for x := 0; x < state.areaSize; x++ {
@@ -96,7 +96,7 @@ func buildArea(state *matchState) {
 	}
 }
 
-func buildFood(state *matchState, percentFrom float32, percentTo float32, min int, isUniformDistribution bool) {
+func BuildFood(state *MatchState, percentFrom float32, percentTo float32, min int, isUniformDistribution bool) {
 	if state.area == nil || state.ants == nil {
 		log.Fatal("builder must have ants and area before build food")
 	}
@@ -123,7 +123,7 @@ func buildFood(state *matchState, percentFrom float32, percentTo float32, min in
 }
 
 // todo symmetrically distribution
-func foodUniformDistribution(state *matchState, foodCount int) {
+func foodUniformDistribution(state *MatchState, foodCount int) {
 	var xPartSize int
 	var yPartSize int
 	var offsets [][2]int

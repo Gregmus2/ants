@@ -29,11 +29,20 @@ type Match struct {
 	round    int
 	part     int
 	states   [][][]string
+
+	jobs    chan *Ant
+	results chan *JobResult
+}
+
+type JobResult struct {
+	Action pkg.Action
+	Pos    *pkg.Pos
+	Ant    *Ant
 }
 
 const matchesCollection string = "matches"
 
-func CreateMatch(gameService *Service, state *matchState, name string) *Match {
+func CreateMatch(gameService *Service, state *MatchState, name string) *Match {
 	if state.players == nil || state.ants == nil {
 		log.Fatal("builder must have at least players and ants")
 	}
@@ -68,6 +77,7 @@ func CreateMatch(gameService *Service, state *matchState, name string) *Match {
 }
 
 func (g *Match) Run() {
+	g.startWorkers()
 	g.start()
 	for g.isOver() {
 		actions := g.collectActions()
@@ -76,6 +86,21 @@ func (g *Match) Run() {
 
 		g.switchRound()
 	}
+
+	g.stopWorkers()
+}
+
+func (g *Match) startWorkers() {
+	g.jobs = make(chan *Ant, 50)
+	g.results = make(chan *JobResult, 50)
+	for w := 1; w <= 10; w++ {
+		go g.worker()
+	}
+}
+
+func (g *Match) stopWorkers() {
+	close(g.jobs)
+	close(g.results)
 }
 
 func (g *Match) isOver() bool {
@@ -96,30 +121,52 @@ func (g *Match) switchRound() {
 func (g *Match) collectActions() map[pkg.Action]map[*pkg.Pos]Ants {
 	actions := make(map[pkg.Action]map[*pkg.Pos]Ants)
 	for _, ant := range g.ants {
+		g.jobs <- ant
+	}
+
+	for range g.ants {
+		result := <-g.results
+		if result == nil {
+			continue
+		}
+
+		if _, ok := actions[result.Action]; !ok {
+			actions[result.Action] = make(map[*pkg.Pos]Ants)
+		}
+
+		actions[result.Action][result.Pos] = append(actions[result.Action][result.Pos], result.Ant)
+	}
+
+	return actions
+}
+
+func (g *Match) worker() {
+	for ant := range g.jobs {
 		// todo can I remove dead ants from g.ants?
 		if ant.IsDead {
+			g.results <- nil
 			continue
 		}
 
 		fieldTypes := g.area.VisibleArea(ant)
 		pos, action := ant.User.Algorithm().Do(fieldTypes, g.round*g.part)
 		if pos.X < -1 || pos.X > 1 || pos.Y < -1 || pos.Y > 1 {
+			g.results <- nil
 			continue
 		}
 
 		pos.Add(ant.Pos)
 		if pos.X < 0 || pos.Y < 0 {
+			g.results <- nil
 			continue
 		}
 
-		if _, ok := actions[action]; !ok {
-			actions[action] = make(map[*pkg.Pos]Ants)
+		g.results <- &JobResult{
+			Action: action,
+			Pos:    pos,
+			Ant:    ant,
 		}
-
-		actions[action][pos] = append(actions[action][pos], ant)
 	}
-
-	return actions
 }
 
 func (g *Match) start() {
@@ -263,10 +310,10 @@ func (g *Match) moveStep(fields map[*pkg.Pos]Ants) {
 
 func (g *Match) birthStep() {
 	latecomers := make([]*user.User, 0, 10)
-	for _, user := range g.birthQ {
-		ok := g.giveBirth(user)
+	for _, player := range g.birthQ {
+		ok := g.giveBirth(player)
 		if !ok {
-			latecomers = append(latecomers, user)
+			latecomers = append(latecomers, player)
 		}
 	}
 	g.birthQ = latecomers
@@ -281,10 +328,7 @@ func (g *Match) savePart() {
 	}
 
 	// todo delegate on service
-	err = g.service.storage.Put(matchesCollection, g.name+strconv.Itoa(g.part), buf.Bytes())
-	if err != nil {
-		log.Fatal(err)
-	}
+	go g.service.storage.Put(matchesCollection, g.name+strconv.Itoa(g.part), buf.Bytes())
 }
 
 func (g *Match) LoadRound(name string, part string) [][][]string {

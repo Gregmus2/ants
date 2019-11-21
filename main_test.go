@@ -24,7 +24,7 @@ import (
 
 const basePath string = "http://127.0.0.1:12302"
 
-func TestServe(t *testing.T) {
+func setup() *config.Config {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	cfg := config.NewConfig()
@@ -42,6 +42,12 @@ func TestServe(t *testing.T) {
 	server.Handle("/api/get", gameService.GetMatchAction)
 
 	go server.Start(12302)
+
+	return cfg
+}
+
+func TestServe(t *testing.T) {
+	cfg := setup()
 	time.Sleep(1000 * time.Millisecond)
 
 	pipes := make([]string, 0)
@@ -55,8 +61,8 @@ func TestServe(t *testing.T) {
 		t.Error("size endpoint must return size from config")
 	}
 
-	registerTestRequest(t, "Greg", "blue")
-	registerTestRequest(t, "Greg2", "green")
+	registrationTestRequest(t, "Greg", "blue")
+	registrationTestRequest(t, "Greg2", "green")
 
 	players := make([]string, 0)
 	JSONDecode(t, get(t, basePath+"/api/players"), &players)
@@ -100,7 +106,7 @@ func get(t *testing.T, path string) []byte {
 	return body
 }
 
-func registerTestRequest(t *testing.T, name string, color string) {
+func registrationTestRequest(t *testing.T, name string, color string) {
 	file, _ := os.Open("./testdata/" + name + ".go")
 	defer file.Close()
 

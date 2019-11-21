@@ -11,7 +11,7 @@ type Config struct {
 	AreaSize int `yaml:"area_size"`
 	Match    struct {
 		PartsLimit int `yaml:"parts_limit"`
-		PartSize   int `yaml:"art_size"`
+		PartSize   int `yaml:"part_size"`
 	} `yaml:"match"`
 	BasePath string `yaml:"base_path"`
 }
