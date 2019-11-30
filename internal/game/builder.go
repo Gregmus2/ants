@@ -14,7 +14,7 @@ type MatchState struct {
 	areaSize int
 	ants     []*Ant
 	players  []*user.User
-	area     Area
+	area     *Area
 	anthills Anthills
 }
 
@@ -57,7 +57,7 @@ func BuildAnts(state *MatchState) {
 
 	state.anthills = make(Anthills)
 	for i := 0; i < len(state.players); i++ {
-		state.area[positions[i][0].X][positions[i][0].Y] = CreateAnthill(state.players[i])
+		state.area.matrix[positions[i][0].X][positions[i][0].Y] = CreateAnthill(state.players[i])
 		state.anthills.Add(state.players[i], positions[i][0], &Anthill{
 			Pos:      positions[i][0],
 			User:     state.players[i],
@@ -75,25 +75,13 @@ func BuildAnts(state *MatchState) {
 			}
 
 			state.ants = append(state.ants, ant)
-			state.area[anthill.BirthPos.X][anthill.BirthPos.Y] = CreateAnt(ant)
+			state.area.matrix[anthill.BirthPos.X][anthill.BirthPos.Y] = CreateAnt(ant)
 		}
 	}
 }
 
 func BuildArea(state *MatchState) {
-	state.area = make([][]*Object, state.areaSize)
-	lastTile := state.areaSize - 1
-	for x := 0; x < state.areaSize; x++ {
-		state.area[x] = make([]*Object, state.areaSize)
-		for y := 0; y < state.areaSize; y++ {
-			// edges
-			if x == 0 || x == lastTile || y == 0 || y == lastTile {
-				state.area[x][y] = CreateWall()
-			} else {
-				state.area[x][y] = CreateEmptyObject()
-			}
-		}
-	}
+	state.area = NewArea(state.areaSize, state.areaSize)
 }
 
 func BuildFood(state *MatchState, percentFrom float32, percentTo float32, min int, isUniformDistribution bool) {
@@ -116,8 +104,8 @@ func BuildFood(state *MatchState, percentFrom float32, percentTo float32, min in
 	for i := 0; i < foodCount; i++ {
 		x := rand.Intn(size) + 1
 		y := rand.Intn(size) + 1
-		if state.area[x][y].Type != pkg.AntField {
-			state.area[x][y] = CreateFood()
+		if state.area.matrix[x][y].Type != pkg.AntField {
+			state.area.matrix[x][y] = CreateFood()
 		}
 	}
 }
@@ -151,8 +139,8 @@ func foodUniformDistribution(state *MatchState, foodCount int) {
 		for j := 0; j < antsCount; j++ {
 			x := rand.Intn(xPartSize) + offsets[j][0]
 			y := rand.Intn(yPartSize) + offsets[j][1]
-			if state.area[x][y].Type != pkg.AntField {
-				state.area[x][y] = CreateFood()
+			if state.area.matrix[x][y].Type != pkg.AntField {
+				state.area.matrix[x][y] = CreateFood()
 			}
 		}
 	}
