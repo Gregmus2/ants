@@ -107,7 +107,7 @@ func get(t *testing.T, path string) []byte {
 }
 
 func registrationTestRequest(t *testing.T, name string, color string) {
-	file, _ := os.Open("./testdata/" + name + ".go")
+	file, _ := os.Open("./testdata/" + name + ".zip")
 	defer file.Close()
 
 	body := &bytes.Buffer{}

@@ -70,10 +70,11 @@ func BuildAnts(state *MatchState) {
 	for _, anthills := range state.anthills.m {
 		for _, anthill := range anthills {
 			ant := &Ant{
-				ID:     state.ants.ID(),
-				Pos:    anthill.BirthPos,
-				User:   anthill.User,
-				IsDead: false,
+				ID:      state.ants.ID(),
+				Pos:     anthill.BirthPos,
+				User:    anthill.User,
+				IsDead:  false,
+				PosDiff: &pkg.Pos{},
 			}
 
 			state.ants.m = append(state.ants.m, ant)
