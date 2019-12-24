@@ -7,27 +7,62 @@ import (
 )
 
 type Ant struct {
-	Pos    *pkg.Pos
-	User   *user.User
-	IsDead bool
+	ID      int
+	Pos     *pkg.Pos
+	User    *user.User
+	IsDead  bool
+	PosDiff *pkg.Pos // last move
 }
 
-type Anthills map[*user.User]map[*pkg.Pos]*Anthill
+type Anthills struct {
+	m  map[*user.User]map[*pkg.Pos]*Anthill
+	id int
+}
 
 type Anthill struct {
+	ID       int
 	Pos      *pkg.Pos
 	User     *user.User
 	BirthPos *pkg.Pos
 }
 
-type Ants []*Ant
-
-func (ah Anthills) ByUser(user *user.User) map[*pkg.Pos]*Anthill {
-	return ah[user]
+type Ants struct {
+	m  []*Ant
+	id int
 }
 
-func (ah Anthills) ByPos(pos *pkg.Pos) *Anthill {
-	for _, anthills := range ah {
+func NewAnts(cap int) *Ants {
+	return &Ants{
+		m:  make([]*Ant, 0, cap),
+		id: 0,
+	}
+}
+
+func (a *Ants) ID() int {
+	a.id++
+
+	return a.id
+}
+
+func NewAnthills() *Anthills {
+	return &Anthills{
+		m:  make(map[*user.User]map[*pkg.Pos]*Anthill),
+		id: 0,
+	}
+}
+
+func (a *Anthills) ID() int {
+	a.id++
+
+	return a.id
+}
+
+func (a Anthills) ByUser(user *user.User) map[*pkg.Pos]*Anthill {
+	return a.m[user]
+}
+
+func (a Anthills) ByPos(pos *pkg.Pos) *Anthill {
+	for _, anthills := range a.m {
 		if _, exist := anthills[pos]; exist {
 			return anthills[pos]
 		}
@@ -36,20 +71,20 @@ func (ah Anthills) ByPos(pos *pkg.Pos) *Anthill {
 	return nil
 }
 
-func (ah Anthills) FirstByUser(user *user.User) *Anthill {
-	for _, anthill := range ah[user] {
+func (a Anthills) FirstByUser(user *user.User) *Anthill {
+	for _, anthill := range a.m[user] {
 		return anthill
 	}
 
 	return nil
 }
 
-func (ah Anthills) DeleteByPos(pos *pkg.Pos) *Anthill {
+func (a Anthills) DeleteByPos(pos *pkg.Pos) *Anthill {
 	var obj *Anthill
-	for i, anthills := range ah {
+	for i, anthills := range a.m {
 		if _, exist := anthills[pos]; exist {
-			obj = ah[i][pos]
-			delete(ah[i], pos)
+			obj = a.m[i][pos]
+			delete(a.m[i], pos)
 
 			return obj
 		}
@@ -58,17 +93,17 @@ func (ah Anthills) DeleteByPos(pos *pkg.Pos) *Anthill {
 	return nil
 }
 
-func (ah Anthills) Add(user *user.User, pos *pkg.Pos, anthill *Anthill) {
-	if _, ok := ah[user]; !ok {
-		ah[user] = make(map[*pkg.Pos]*Anthill)
+func (a Anthills) Add(user *user.User, pos *pkg.Pos, anthill *Anthill) {
+	if _, ok := a.m[user]; !ok {
+		a.m[user] = make(map[*pkg.Pos]*Anthill)
 	}
 
-	ah[user][pos] = anthill
+	a.m[user][pos] = anthill
 }
 
-func (ants Ants) Living() []*Ant {
-	l := make([]*Ant, 0, len(ants))
-	for _, ant := range ants {
+func (a Ants) Living() []*Ant {
+	l := make([]*Ant, 0, len(a.m))
+	for _, ant := range a.m {
 		if !ant.IsDead {
 			l = append(l, ant)
 		}

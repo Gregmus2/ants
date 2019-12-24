@@ -12,10 +12,10 @@ import (
 
 type MatchState struct {
 	areaSize int
-	ants     []*Ant
+	ants     *Ants
 	players  []*user.User
 	area     *Area
-	anthills Anthills
+	anthills *Anthills
 }
 
 func NewMatchState(areaSize int, players []*user.User) (*MatchState, error) {
@@ -55,26 +55,28 @@ func BuildAnts(state *MatchState) {
 		log.Fatal("wrong number of players")
 	}
 
-	state.anthills = make(Anthills)
+	state.anthills = NewAnthills()
 	for i := 0; i < len(state.players); i++ {
 		state.area.matrix[positions[i][0].X][positions[i][0].Y] = CreateAnthill(state.players[i])
 		state.anthills.Add(state.players[i], positions[i][0], &Anthill{
+			ID:       state.anthills.ID(),
 			Pos:      positions[i][0],
 			User:     state.players[i],
 			BirthPos: positions[i][1],
 		})
 	}
 
-	state.ants = make([]*Ant, 0, len(state.players))
-	for _, anthills := range state.anthills {
+	state.ants = NewAnts(len(state.players))
+	for _, anthills := range state.anthills.m {
 		for _, anthill := range anthills {
 			ant := &Ant{
+				ID:     state.ants.ID(),
 				Pos:    anthill.BirthPos,
 				User:   anthill.User,
 				IsDead: false,
 			}
 
-			state.ants = append(state.ants, ant)
+			state.ants.m = append(state.ants.m, ant)
 			state.area.matrix[anthill.BirthPos.X][anthill.BirthPos.Y] = CreateAnt(ant)
 		}
 	}
@@ -116,7 +118,7 @@ func foodUniformDistribution(state *MatchState, foodCount int) {
 	var yPartSize int
 	var offsets [][2]int
 	halfSize := int(math.Round(float64(state.areaSize / 2)))
-	antsCount := len(state.ants)
+	antsCount := len(state.ants.m)
 	switch antsCount {
 	case 2:
 		// -1 because of walls

@@ -62,5 +62,14 @@ func (o *Object) FieldTypeForUser(ant *Ant) pkg.FieldType {
 		return pkg.EnemyField
 	}
 
+	if o.Type == pkg.AnthillField {
+		// change AnthillField and get user from it to compare
+		if ant.User.Color == o.Color {
+			return pkg.AllyAnthillField
+		}
+
+		return pkg.EnemyAnthillField
+	}
+
 	return o.Type
 }

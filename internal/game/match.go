@@ -20,8 +20,8 @@ type MatchStat struct {
 type Match struct {
 	name     string
 	players  []*user.User
-	ants     []*Ant
-	anthills Anthills
+	ants     *Ants
+	anthills *Anthills
 	area     *Area
 	birthQ   []*user.User
 	stat     *MatchStat
@@ -118,23 +118,23 @@ func (g *Match) switchRound() {
 	g.round++
 }
 
-func (g *Match) collectActions() map[pkg.Action]map[*pkg.Pos]Ants {
-	actions := make(map[pkg.Action]map[*pkg.Pos]Ants)
-	for _, ant := range g.ants {
+func (g *Match) collectActions() map[pkg.Action]map[*pkg.Pos]*Ants {
+	actions := make(map[pkg.Action]map[*pkg.Pos]*Ants)
+	for _, ant := range g.ants.m {
 		g.jobs <- ant
 	}
 
-	for range g.ants {
+	for range g.ants.m {
 		result := <-g.results
 		if result == nil {
 			continue
 		}
 
 		if _, ok := actions[result.Action]; !ok {
-			actions[result.Action] = make(map[*pkg.Pos]Ants)
+			actions[result.Action] = make(map[*pkg.Pos]*Ants)
 		}
 
-		actions[result.Action][result.Pos] = append(actions[result.Action][result.Pos], result.Ant)
+		actions[result.Action][result.Pos].m = append(actions[result.Action][result.Pos].m, result.Ant)
 	}
 
 	return actions
@@ -149,7 +149,8 @@ func (g *Match) worker() {
 		}
 
 		fieldTypes := g.area.VisibleArea(ant)
-		pos, action := ant.User.Algorithm().Do(fieldTypes, g.round*g.part)
+		pos, action := ant.User.Algorithm().Do(ant.ID, fieldTypes, g.round*g.part, ant.PosDiff)
+		ant.PosDiff = &pkg.Pos{}
 		if pos.X < -1 || pos.X > 1 || pos.Y < -1 || pos.Y > 1 {
 			g.results <- nil
 			continue
@@ -170,14 +171,14 @@ func (g *Match) worker() {
 }
 
 func (g *Match) start() {
-	for _, ant := range g.ants {
+	for _, ant := range g.ants.m {
 		anthill := g.anthills.FirstByUser(ant.User)
-		ant.User.Algorithm().Start(*anthill.Pos, *anthill.BirthPos)
+		ant.User.Algorithm().Start(anthill.ID, anthill.BirthPos)
 	}
 }
 
 // todo write this logic to instruction
-func (g *Match) play(actions map[pkg.Action]map[*pkg.Pos]Ants) {
+func (g *Match) play(actions map[pkg.Action]map[*pkg.Pos]*Ants) {
 	if fields, ok := actions[pkg.AttackAction]; ok {
 		g.attackStep(fields)
 	}
@@ -196,7 +197,7 @@ func (g *Match) play(actions map[pkg.Action]map[*pkg.Pos]Ants) {
 }
 
 // todo capture anthill
-func (g *Match) attackStep(fields map[*pkg.Pos]Ants) {
+func (g *Match) attackStep(fields map[*pkg.Pos]*Ants) {
 	for targetPos, ants := range fields {
 		target := g.area.ByPos(targetPos)
 		switch target.Type {
@@ -208,7 +209,7 @@ func (g *Match) attackStep(fields map[*pkg.Pos]Ants) {
 	}
 }
 
-func (g *Match) handleAttackAnt(targetPos *pkg.Pos, victim *Ant, ants Ants) {
+func (g *Match) handleAttackAnt(targetPos *pkg.Pos, victim *Ant, ants *Ants) {
 	if victim.IsDead {
 		// todo remove after tests
 		panic("BUG: attempt to attack ant, which has already dead")
@@ -216,7 +217,7 @@ func (g *Match) handleAttackAnt(targetPos *pkg.Pos, victim *Ant, ants Ants) {
 
 	killers := make([]*user.User, 0, 1)
 	bestPower := 0
-	for _, ant := range ants {
+	for _, ant := range ants.m {
 		power := g.area.CalcAtkPower(victim, ant)
 		switch {
 		case power < bestPower:
@@ -236,12 +237,13 @@ func (g *Match) handleAttackAnt(targetPos *pkg.Pos, victim *Ant, ants Ants) {
 	// todo ant would be part of atkPower of another ant in that round
 	g.area.matrix[targetPos.X][targetPos.Y] = CreateEmptyObject()
 	g.stat.Kill(killers, victim.User)
+	victim.User.Algorithm().OnAntDie(victim.ID)
 }
 
-func (g *Match) handleAttackAnthill(targetPos *pkg.Pos, ants Ants) {
+func (g *Match) handleAttackAnthill(targetPos *pkg.Pos, ants *Ants) {
 	users := make(map[*user.User]bool)
 	invaders := 0
-	for _, ant := range ants {
+	for _, ant := range ants.m {
 		if _, exist := users[ant.User]; !exist {
 			users[ant.User] = true
 			invaders++
@@ -252,15 +254,18 @@ func (g *Match) handleAttackAnthill(targetPos *pkg.Pos, ants Ants) {
 		return
 	}
 
-	g.area.matrix[targetPos.X][targetPos.Y] = CreateAnthill(ants[0].User)
+	invader := ants.m[0]
+	g.area.matrix[targetPos.X][targetPos.Y] = CreateAnthill(invader.User)
 	anthill := g.anthills.DeleteByPos(targetPos)
-	anthill.User = ants[0].User
-	g.anthills.Add(ants[0].User, targetPos, anthill)
+	anthill.User.Algorithm().OnAnthillDie(anthill.ID)
+	anthill.User = invader.User
+	g.anthills.Add(invader.User, targetPos, anthill)
+	invader.User.Algorithm().OnNewAnthill(invader.ID, anthill.BirthPos, anthill.ID)
 }
 
-func (g *Match) suicideStep(fields map[*pkg.Pos]Ants) {
+func (g *Match) suicideStep(fields map[*pkg.Pos]*Ants) {
 	for _, ants := range fields {
-		for _, ant := range ants {
+		for _, ant := range ants.m {
 			if ant.IsDead {
 				continue
 			}
@@ -268,11 +273,12 @@ func (g *Match) suicideStep(fields map[*pkg.Pos]Ants) {
 			ant.IsDead = true
 			g.area.matrix[ant.Pos.X][ant.Pos.Y] = CreateEmptyObject()
 			g.stat.Die(ant.User)
+			ant.User.Algorithm().OnAntDie(ant.ID)
 		}
 	}
 }
 
-func (g *Match) eatStep(fields map[*pkg.Pos]Ants) {
+func (g *Match) eatStep(fields map[*pkg.Pos]*Ants) {
 	for targetPos, ants := range fields {
 		target := g.area.ByPos(targetPos)
 		if target.Type != pkg.FoodField {
@@ -283,13 +289,13 @@ func (g *Match) eatStep(fields map[*pkg.Pos]Ants) {
 			continue
 		}
 
-		ant := ants[0]
+		ant := ants.m[0]
 		g.birthQ = append(g.birthQ, ant.User)
 		g.area.matrix[targetPos.X][targetPos.Y] = CreateEmptyObject()
 	}
 }
 
-func (g *Match) moveStep(fields map[*pkg.Pos]Ants) {
+func (g *Match) moveStep(fields map[*pkg.Pos]*Ants) {
 	for targetPos, ants := range fields {
 		target := g.area.ByPos(targetPos)
 		if target.Type != pkg.EmptyField {
@@ -301,9 +307,10 @@ func (g *Match) moveStep(fields map[*pkg.Pos]Ants) {
 		}
 
 		// fixme in that case ant can move to field, where another ant was in that round
-		ant := ants[0]
+		ant := ants.m[0]
 		g.area.matrix[targetPos.X][targetPos.Y] = g.area.matrix[ant.Pos.X][ant.Pos.Y]
 		g.area.matrix[ant.Pos.X][ant.Pos.Y] = CreateEmptyObject()
+		ant.PosDiff = &pkg.Pos{X: targetPos.X - ant.Pos.X, Y: targetPos.Y - ant.Pos.Y}
 		ant.Pos = targetPos
 	}
 }
@@ -360,13 +367,15 @@ func (g *Match) giveBirth(user *user.User) bool {
 		}
 
 		baby := &Ant{
+			ID:     g.ants.ID(),
 			Pos:    anthill.BirthPos,
 			User:   user,
 			IsDead: false,
 		}
 		g.area.matrix[anthill.BirthPos.X][anthill.BirthPos.Y] = CreateAnt(baby)
-		g.ants = append(g.ants, baby)
+		g.ants.m = append(g.ants.m, baby)
 		g.stat.ants[user]++
+		user.Algorithm().OnAntBirth(baby.ID, anthill.ID)
 
 		return true
 	}
