@@ -134,6 +134,10 @@ func (g *Match) collectActions() map[pkg.Action]map[*pkg.Pos]*Ants {
 			actions[result.Action] = make(map[*pkg.Pos]*Ants)
 		}
 
+		if _, ok := actions[result.Action][result.Pos]; !ok {
+			actions[result.Action][result.Pos] = NewAnts(1)
+		}
+
 		actions[result.Action][result.Pos].m = append(actions[result.Action][result.Pos].m, result.Ant)
 	}
 
@@ -173,7 +177,12 @@ func (g *Match) worker() {
 func (g *Match) start() {
 	for _, ant := range g.ants.m {
 		anthill := g.anthills.FirstByUser(ant.User)
-		ant.User.Algorithm().Start(anthill.ID, anthill.BirthPos)
+		relBirthPos := &pkg.Pos{
+			X: anthill.BirthPos.X - anthill.Pos.X,
+			Y: anthill.BirthPos.Y - anthill.Pos.Y,
+		}
+		ant.User.Algorithm().Start(anthill.ID, relBirthPos)
+		ant.User.Algorithm().OnAntBirth(ant.ID, anthill.ID)
 	}
 }
 
@@ -367,10 +376,11 @@ func (g *Match) giveBirth(user *user.User) bool {
 		}
 
 		baby := &Ant{
-			ID:     g.ants.ID(),
-			Pos:    anthill.BirthPos,
-			User:   user,
-			IsDead: false,
+			ID:      g.ants.ID(),
+			Pos:     anthill.BirthPos,
+			User:    user,
+			IsDead:  false,
+			PosDiff: &pkg.Pos{},
 		}
 		g.area.matrix[anthill.BirthPos.X][anthill.BirthPos.Y] = CreateAnt(baby)
 		g.ants.m = append(g.ants.m, baby)

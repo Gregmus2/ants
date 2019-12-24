@@ -46,8 +46,8 @@ func (a *Area) VisibleArea(ant *Ant) [5][5]pkg.FieldType {
 	var fieldTypes [5][5]pkg.FieldType
 	for dY := 0; dY < 5; dY++ {
 		for dX := 0; dX < 5; dX++ {
-			x := ant.Pos.X - dX - 2
-			y := ant.Pos.Y - dY - 2
+			x := ant.Pos.X + dX - 2
+			y := ant.Pos.Y + dY - 2
 			if x < 0 || y < 0 || x > a.w-1 || y > a.h-1 {
 				fieldTypes[dX][dY] = pkg.NoField
 				continue
