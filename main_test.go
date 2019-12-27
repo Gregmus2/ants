@@ -76,7 +76,7 @@ func TestServe(t *testing.T) {
 		t.Error("empty id from start request")
 	}
 
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(5000 * time.Millisecond)
 	area := getTestRequest(t, id)
 	if len(area) != cfg.Match.PartSize {
 		t.Errorf("wrong batch size %d", len(area))

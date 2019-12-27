@@ -29,9 +29,6 @@ type Match struct {
 	round    int
 	part     int
 	states   [][][]string
-
-	jobs    chan *Ant
-	results chan *JobResult
 }
 
 type JobResult struct {
@@ -77,7 +74,6 @@ func CreateMatch(gameService *Service, state *MatchState, name string) *Match {
 }
 
 func (g *Match) Run() {
-	g.startWorkers()
 	g.start()
 	for g.isOver() {
 		actions := g.collectActions()
@@ -86,21 +82,6 @@ func (g *Match) Run() {
 
 		g.switchRound()
 	}
-
-	g.stopWorkers()
-}
-
-func (g *Match) startWorkers() {
-	g.jobs = make(chan *Ant, 50)
-	g.results = make(chan *JobResult, 50)
-	for w := 1; w <= 10; w++ {
-		go g.worker()
-	}
-}
-
-func (g *Match) stopWorkers() {
-	close(g.jobs)
-	close(g.results)
 }
 
 func (g *Match) isOver() bool {
@@ -120,58 +101,37 @@ func (g *Match) switchRound() {
 
 func (g *Match) collectActions() map[pkg.Action]map[*pkg.Pos]*Ants {
 	actions := make(map[pkg.Action]map[*pkg.Pos]*Ants)
+
 	for _, ant := range g.ants.m {
-		g.jobs <- ant
-	}
-
-	for range g.ants.m {
-		result := <-g.results
-		if result == nil {
-			continue
-		}
-
-		if _, ok := actions[result.Action]; !ok {
-			actions[result.Action] = make(map[*pkg.Pos]*Ants)
-		}
-
-		if _, ok := actions[result.Action][result.Pos]; !ok {
-			actions[result.Action][result.Pos] = NewAnts(1)
-		}
-
-		actions[result.Action][result.Pos].m = append(actions[result.Action][result.Pos].m, result.Ant)
-	}
-
-	return actions
-}
-
-func (g *Match) worker() {
-	for ant := range g.jobs {
 		// todo can I remove dead ants from g.ants?
 		if ant.IsDead {
-			g.results <- nil
 			continue
 		}
 
 		fieldTypes := g.area.VisibleArea(ant)
-		pos, action := ant.User.Algorithm().Do(ant.ID, fieldTypes, g.round*g.part, ant.PosDiff)
+		pos, action := ant.User.Algorithm().Do(ant.ID, fieldTypes, g.round*g.part, *ant.PosDiff)
 		ant.PosDiff = &pkg.Pos{}
 		if pos.X < -1 || pos.X > 1 || pos.Y < -1 || pos.Y > 1 {
-			g.results <- nil
 			continue
 		}
 
 		pos.Add(ant.Pos)
 		if pos.X < 0 || pos.Y < 0 {
-			g.results <- nil
 			continue
 		}
 
-		g.results <- &JobResult{
-			Action: action,
-			Pos:    pos,
-			Ant:    ant,
+		if _, ok := actions[action]; !ok {
+			actions[action] = make(map[*pkg.Pos]*Ants)
 		}
+
+		if _, ok := actions[action][pos]; !ok {
+			actions[action][pos] = NewAnts(1)
+		}
+
+		actions[action][pos].m = append(actions[action][pos].m, ant)
 	}
+
+	return actions
 }
 
 func (g *Match) start() {
@@ -181,7 +141,7 @@ func (g *Match) start() {
 			X: anthill.BirthPos.X - anthill.Pos.X,
 			Y: anthill.BirthPos.Y - anthill.Pos.Y,
 		}
-		ant.User.Algorithm().Start(anthill.ID, relBirthPos)
+		ant.User.Algorithm().Start(anthill.ID, *relBirthPos)
 		ant.User.Algorithm().OnAntBirth(ant.ID, anthill.ID)
 	}
 }
@@ -269,7 +229,7 @@ func (g *Match) handleAttackAnthill(targetPos *pkg.Pos, ants *Ants) {
 	anthill.User.Algorithm().OnAnthillDie(anthill.ID)
 	anthill.User = invader.User
 	g.anthills.Add(invader.User, targetPos, anthill)
-	invader.User.Algorithm().OnNewAnthill(invader.ID, anthill.BirthPos, anthill.ID)
+	invader.User.Algorithm().OnNewAnthill(invader.ID, *anthill.BirthPos, anthill.ID)
 }
 
 func (g *Match) suicideStep(fields map[*pkg.Pos]*Ants) {
