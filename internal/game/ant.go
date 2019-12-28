@@ -81,12 +81,14 @@ func (a Anthills) FirstByUser(user *user.User) *Anthill {
 
 func (a Anthills) DeleteByPos(pos *pkg.Pos) *Anthill {
 	var obj *Anthill
-	for i, anthills := range a.m {
-		if _, exist := anthills[pos]; exist {
-			obj = a.m[i][pos]
-			delete(a.m[i], pos)
+	for i, positions := range a.m {
+		for p := range positions {
+			if p.X == pos.X && p.Y == pos.Y {
+				obj = a.m[i][p]
+				delete(a.m[i], p)
 
-			return obj
+				return obj
+			}
 		}
 	}
 
