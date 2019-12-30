@@ -229,7 +229,11 @@ func (g *Match) handleAttackAnthill(targetPos *pkg.Pos, ants *Ants) {
 	anthill.User.Algorithm().OnAnthillDie(anthill.ID)
 	anthill.User = invader.User
 	g.anthills.Add(invader.User, targetPos, anthill)
-	invader.User.Algorithm().OnNewAnthill(invader.ID, *anthill.BirthPos, anthill.ID)
+	relBirthPos := pkg.Pos{
+		X: anthill.BirthPos.X - anthill.Pos.X,
+		Y: anthill.BirthPos.Y - anthill.Pos.Y,
+	}
+	invader.User.Algorithm().OnNewAnthill(invader.ID, relBirthPos, anthill.ID)
 }
 
 func (g *Match) suicideStep(fields map[*pkg.Pos]*Ants) {

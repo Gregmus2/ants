@@ -21,16 +21,14 @@ func (s *JSONServer) Handle(path string, handler func(r *http.Request) (interfac
 
 		res, err := json.Marshal(response)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = fmt.Fprint(w, err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		w.WriteHeader(code)
 		_, err = w.Write(res)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = fmt.Fprint(w, err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	})
