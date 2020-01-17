@@ -82,6 +82,8 @@ func (g *Match) Run() {
 
 		g.switchRound()
 	}
+
+	g.savePart()
 }
 
 func (g *Match) isOver() bool {

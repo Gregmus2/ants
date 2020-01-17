@@ -56,6 +56,7 @@ export class App{
         App.renderFromBuffer();
     }
 
+    // todo get all info by websockets
     static fetchMap() {
         App.updating = true;
         let prom = fetch('/api/get?id=' + App.id + '&part=' + App.part)
