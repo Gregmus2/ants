@@ -111,7 +111,8 @@ func (g *Match) collectActions() map[pkg.Action]map[*pkg.Pos]*Ants {
 		}
 
 		fieldTypes := g.area.VisibleArea(ant)
-		pos, action := ant.User.Algorithm().Do(ant.ID, fieldTypes, g.round*g.part, *ant.PosDiff)
+		Pos, action := ant.User.Algorithm().Do(ant.ID, fieldTypes, g.round*g.part, *ant.PosDiff)
+		pos := &Pos
 		ant.PosDiff = &pkg.Pos{}
 		if pos.X < -1 || pos.X > 1 || pos.Y < -1 || pos.Y > 1 {
 			continue

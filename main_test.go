@@ -77,18 +77,14 @@ func TestServe(t *testing.T) {
 	}
 
 	time.Sleep(5000 * time.Millisecond)
-	for i := 1; ; i++ {
+	for i := 1; i < cfg.Match.PartsLimit; i++ {
 		area := getTestRequest(t, id, strconv.Itoa(i))
 		if len(area) != cfg.Match.PartSize {
-			if i-1 < 5 {
-				//t.Fatalf("app gave %d parts", i-1)
-			} else {
-				t.Logf("app gave %d parts", i-1)
-			}
+			t.Logf("app gave %d parts", i-1)
 		}
 	}
 
-	_ = os.Remove("test.db")
+	//_ = os.Remove("test.db")
 }
 
 func JSONDecode(t *testing.T, body []byte, data interface{}) {
